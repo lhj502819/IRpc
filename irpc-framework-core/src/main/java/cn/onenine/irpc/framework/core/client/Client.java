@@ -6,7 +6,7 @@ import cn.onenine.irpc.framework.core.common.RpcProtocol;
 import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
 import cn.onenine.irpc.framework.core.config.ClientConfig;
 import cn.onenine.irpc.framework.core.proxy.jdk.JDKProxyFactory;
-import cn.onenine.irpc.framework.core.server.RpcDecoder;
+import cn.onenine.irpc.framework.core.common.RpcDecoder;
 import cn.onenine.irpc.framework.interfaces.DataService;
 import com.alibaba.fastjson2.JSONObject;
 import io.netty.bootstrap.Bootstrap;

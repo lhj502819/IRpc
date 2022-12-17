@@ -1,4 +1,4 @@
-package cn.onenine.irpc.framework.core.server;
+package cn.onenine.irpc.framework.core.common;
 
 import cn.onenine.irpc.framework.core.common.RpcProtocol;
 import io.netty.buffer.ByteBuf;
