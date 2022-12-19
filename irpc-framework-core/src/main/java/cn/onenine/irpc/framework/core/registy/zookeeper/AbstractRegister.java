@@ -1,7 +1,5 @@
 package cn.onenine.irpc.framework.core.registy.zookeeper;
 
-import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
-import cn.onenine.irpc.framework.core.common.cache.CommonServerCache;
 import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
 
@@ -12,7 +10,7 @@ import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.PROV
 
 /**
  * Description：主要作用是对一些注册数据做统一的处理，假设日后需要考虑支持多种类型的注册中心
- *  例如：Redis、etcd，所有基础的操作都可以统一放在抽象类里实现
+ * 例如：Redis、etcd，所有基础的操作都可以统一放在抽象类里实现
  *
  * @author li.hongjian
  * @email lhj502819@163.com
@@ -42,9 +40,21 @@ public abstract class AbstractRegister implements RegistryService {
 
     /**
      * 留给子类扩展
+     *
      * @param url
      */
-    public abstract void doAfterSubscribe(URL url);
+    public void doBeforeSubscribe(URL url) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * 留给子类扩展，不强制实现
+     *
+     * @param url
+     */
+    public void doAfterSubscribe(URL url){
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * 留给子类扩展

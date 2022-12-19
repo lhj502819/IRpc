@@ -13,7 +13,7 @@ public class ChannelFutureWrapper {
 
     private String host;
 
-    private String port;
+    private Integer port;
 
     public ChannelFuture getChannelFuture() {
         return channelFuture;
@@ -31,11 +31,11 @@ public class ChannelFutureWrapper {
         this.host = host;
     }
 
-    public String getPort() {
+    public Integer getPort() {
         return port;
     }
 
-    public void setPort(String port) {
+    public void setPort(Integer port) {
         this.port = port;
     }
 }

@@ -79,7 +79,7 @@ public abstract class AbstractZookeeperClient {
     /**
      * 创建有序且临时类型节点数据信息
      */
-    public abstract void createTemporarySeqDat(String address,String data);
+    public abstract void createTemporarySeqData(String address, String data);
 
     /**
      * 创建临时节点数据类型信息
@@ -100,6 +100,11 @@ public abstract class AbstractZookeeperClient {
      * 展示节点下边的数据
      */
     public abstract List<String> listNode(String address);
+
+    /**
+     * 删除节点下的数据
+     */
+    public abstract boolean deleteNode(String address);
 
     /**
      * 判断是否存在其他节点

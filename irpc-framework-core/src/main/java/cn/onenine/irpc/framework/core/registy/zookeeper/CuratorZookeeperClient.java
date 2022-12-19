@@ -41,6 +41,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         }
     }
 
+    @Override
     public void updateNodeData(String address, String data) {
         try {
             client.setData().forPath(address, data.getBytes());
@@ -49,11 +50,13 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         }
     }
 
+    @Override
     public Object getClient() {
         return client;
     }
 
 
+    @Override
     public String getNodeData(String address) {
         try {
             byte[] result = client.getData().forPath(address);
@@ -68,6 +71,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         return null;
     }
 
+    @Override
     public List<String> getChildrenData(String path) {
         try {
             return client.getChildren().forPath(path);
@@ -79,6 +83,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         return null;
     }
 
+    @Override
     public void createPersistentData(String address, String data) {
         try {
             client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(address, data.getBytes());
@@ -87,6 +92,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         }
     }
 
+    @Override
     public void createPersistentWithSeqData(String address, String data) {
         try {
             client.create().creatingParentContainersIfNeeded().withMode(CreateMode.PERSISTENT_SEQUENTIAL).forPath(address, data.getBytes());
@@ -95,7 +101,8 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         }
     }
 
-    public void createTemporarySeqDat(String address, String data) {
+    @Override
+    public void createTemporarySeqData(String address, String data) {
         try {
             client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(address, data.getBytes());
         } catch (Exception e) {
@@ -103,6 +110,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         }
     }
 
+    @Override
     public void createTemporaryData(String address, String data) {
         try {
             client.create().creatingParentContainersIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(address, data.getBytes());
@@ -117,6 +125,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         }
     }
 
+    @Override
     public void setTemporaryData(String address, String data) {
         try {
             client.setData().forPath(address, data.getBytes());
@@ -126,10 +135,12 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
 
     }
 
+    @Override
     public void destroy() {
         client.close();
     }
 
+    @Override
     public List<String> listNode(String address) {
         try {
             return client.getChildren().forPath(address);
@@ -139,6 +150,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         return Collections.emptyList();
     }
 
+    @Override
     public boolean existNode(String address) {
         try {
             Stat stat = client.checkExists().forPath(address);
@@ -149,6 +161,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         return false;
     }
 
+    @Override
     public void watchNodeData(String path, Watcher watcher) {
         try {
             client.getData().usingWatcher(watcher).forPath(path);
@@ -157,11 +170,23 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient {
         }
     }
 
+    @Override
     public void watchChildNodeData(String path, Watcher watcher) {
         try {
             client.getData().usingWatcher(watcher).forPath(path);
         } catch (Exception e) {
             logger.error("watch child node data error" , e);
         }
+    }
+
+    @Override
+    public boolean deleteNode(String address) {
+        try {
+            client.delete().forPath(address);
+            return true;
+        } catch (Exception e) {
+            logger.error("delete node error" , e);
+        }
+        return false;
     }
 }
