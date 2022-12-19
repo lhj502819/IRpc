@@ -2,7 +2,12 @@ package cn.onenine.irpc.framework.core.server;
 
 import cn.onenine.irpc.framework.core.common.RpcDecoder;
 import cn.onenine.irpc.framework.core.common.RpcEncoder;
+import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
+import cn.onenine.irpc.framework.core.common.utils.CommonUtils;
 import cn.onenine.irpc.framework.core.config.ServerConfig;
+import cn.onenine.irpc.framework.core.registy.RegistryService;
+import cn.onenine.irpc.framework.core.registy.URL;
+import cn.onenine.irpc.framework.core.registy.zookeeper.ZookeeperRegister;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -12,6 +17,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
+import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
 
 /**
  * @author li.hongjian
@@ -25,6 +31,8 @@ public class Server {
     private static EventLoopGroup workerGroup = null;
 
     private ServerConfig serverConfig;
+
+    private RegistryService registryService;
 
     public ServerConfig getServerConfig() {
         return serverConfig;
@@ -55,31 +63,67 @@ public class Server {
             }
         });
 
+        this.batchExportUrl();
+
         bootStrap.bind(serverConfig.getPort()).sync();
     }
 
-
-    public void registryService(Object serviceBean) {
-        if (serviceBean.getClass().getInterfaces().length == 0) {
+    /**
+     * 暴露服务信息
+     */
+    public void exportService(Object serviceBean){
+        if (serviceBean.getClass().getInterfaces().length == 0){
             throw new RuntimeException("service must had interfaces!");
         }
-
         Class<?>[] classes = serviceBean.getClass().getInterfaces();
-        if (classes.length > 1){
+        if (classes.length >1){
             throw new RuntimeException("service must only had one interfaces!");
         }
+        if (registryService == null){
+            registryService = new ZookeeperRegister(serverConfig.getRegisterAddr());
+        }
+        //默认选择该对象的第一个实现
         Class<?> interfaceClass = classes[0];
-        //需要注册的对象统一放到一个Map集合中进行管理
         PROVIDER_CLASS_MAP.put(interfaceClass.getName(),serviceBean);
+        URL url = new URL();
+        url.setServiceName(interfaceClass.getName());
+        url.setApplicationName(serverConfig.getApplicationName());
+        url.addParameter("host", CommonUtils.getIpAddress());
+        url.addParameter("port",String.valueOf(serverConfig.getPort()));
+        PROVIDER_URL_SET.add(url);
+    }
+
+    /**
+     * 为了将服务端的具体访问都暴露到注册中心
+     */
+    private void batchExportUrl() {
+
+        Thread task = new Thread(() -> {
+            try {
+                Thread.sleep(2500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            for (URL url : PROVIDER_URL_SET) {
+                registryService.register(url);
+            }
+        });
+
+        task.start();
 
     }
 
+
+    public void initServerConfig(){
+        ServerConfig serverConfig = PropertiesBootstrap.loadServerConfigFromLocal();
+        this.setServerConfig(serverConfig);
+    }
+
+
     public static void main(String[] args) throws InterruptedException {
         Server server = new Server();
-        ServerConfig serverConfig = new ServerConfig();
-        serverConfig.setPort(8999);
-        server.setServerConfig(serverConfig);
-        server.registryService(new DataServiceImpl());
+        server.initServerConfig();
+        server.exportService(new DataServiceImpl());
         server.startApplication();
     }
 

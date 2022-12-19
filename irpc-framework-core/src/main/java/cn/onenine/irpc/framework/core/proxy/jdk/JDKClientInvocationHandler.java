@@ -2,6 +2,8 @@ package cn.onenine.irpc.framework.core.proxy.jdk;
 
 import cn.onenine.irpc.framework.core.common.RpcInvocation;
 import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
+import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
+import cn.onenine.irpc.framework.core.config.ClientConfig;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -25,8 +27,11 @@ public class JDKClientInvocationHandler implements InvocationHandler {
 
     private Class<?> clazz;
 
+    private ClientConfig clientConfig ;
+
     public JDKClientInvocationHandler(Class<?> clazz) {
         this.clazz = clazz;
+        this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
     }
 
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -41,7 +46,7 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         SEND_QUEUE.add(rpcInvocation);
         long beginTime = System.currentTimeMillis();
         //客户端请求超时的判断依据
-        while (System.currentTimeMillis() - beginTime < 3 * 1000){
+        while (System.currentTimeMillis() - beginTime < 3 * 10000){
             Object object = RESP_MAP.get(rpcInvocation.getUuid());
             if (object instanceof  RpcInvocation){
                 return ((RpcInvocation)object).getResponse();

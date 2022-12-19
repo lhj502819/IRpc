@@ -11,6 +11,26 @@ public class ServerConfig {
 
     private int port;
 
+    private String applicationName;
+
+    private String registerAddr;
+
+    public String getApplicationName() {
+        return applicationName;
+    }
+
+    public void setApplicationName(String applicationName) {
+        this.applicationName = applicationName;
+    }
+
+    public String getRegisterAddr() {
+        return registerAddr;
+    }
+
+    public void setRegisterAddr(String registerAddr) {
+        this.registerAddr = registerAddr;
+    }
+
     public int getPort() {
         return port;
     }

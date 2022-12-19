@@ -7,23 +7,47 @@ package cn.onenine.irpc.framework.core.config;
  */
 public class ClientConfig {
 
-    private Integer port;
+    private String applicationName;
 
-    private String serverAddr;
+    private String registerAddr;
 
-    public Integer getPort() {
-        return port;
+    private String proxyType;
+
+    /**
+     * 接口调用超时时间
+     */
+    private long callTimeout = 3000;
+
+
+    public String getApplicationName() {
+        return applicationName;
     }
 
-    public void setPort(Integer port) {
-        this.port = port;
+    public void setApplicationName(String applicationName) {
+        this.applicationName = applicationName;
     }
 
-    public String getServerAddr() {
-        return serverAddr;
+    public String getRegisterAddr() {
+        return registerAddr;
     }
 
-    public void setServerAddr(String serverAddr) {
-        this.serverAddr = serverAddr;
+    public void setRegisterAddr(String registerAddr) {
+        this.registerAddr = registerAddr;
+    }
+
+    public String getProxyType() {
+        return proxyType;
+    }
+
+    public void setProxyType(String proxyType) {
+        this.proxyType = proxyType;
+    }
+
+    public long getCallTimeout() {
+        return callTimeout;
+    }
+
+    public void setCallTimeout(long callTimeout) {
+        this.callTimeout = callTimeout;
     }
 }

@@ -30,7 +30,7 @@ public class CommonClientCache {
     /**
      * provider名称，该服务有哪些集群URL
      */
-    public static List<URL> SUBSCRIBE_SERVICE_LIST = new CopyOnWriteArrayList<>();
+    public static List<String> SUBSCRIBE_SERVICE_LIST = new CopyOnWriteArrayList<>();
 
     public static ClientConfig CLIENT_CONFIG;
 
