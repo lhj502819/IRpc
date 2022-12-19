@@ -75,9 +75,6 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
         String urlStr = URL.buildProviderUrlStr(url);
         if (!zkClient.existNode(getProviderPath(url))) {
             zkClient.createTemporaryData(getProviderPath(url),urlStr);
-        }else {
-            zkClient.deleteNode(getConsumerPath(url));
-            zkClient.createTemporarySeqData(getConsumerPath(url),urlStr);
         }
         super.subscribe(url);
     }
