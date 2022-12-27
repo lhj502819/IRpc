@@ -132,10 +132,10 @@ public class Client {
      */
     class AsyncSendJob implements Runnable {
 
-
         public AsyncSendJob() {
         }
 
+        @Override
         public void run() {
             while (true) {
                 try {

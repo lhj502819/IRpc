@@ -3,6 +3,7 @@ package cn.onenine.irpc.framework.core.common;
 import java.util.Arrays;
 
 /**
+ * 对一次调用的封装
  * @author li.hongjian
  * @email lhj502819@163.com
  * @since 2022/12/17 10:53

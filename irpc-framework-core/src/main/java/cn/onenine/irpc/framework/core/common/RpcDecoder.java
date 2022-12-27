@@ -1,6 +1,5 @@
 package cn.onenine.irpc.framework.core.common;
 
-import cn.onenine.irpc.framework.core.common.RpcProtocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -24,6 +23,7 @@ public class RpcDecoder extends ByteToMessageDecoder {
      */
     public final int BASE_LENGTH = 2 + 4;
 
+    @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (in.readableBytes() >= BASE_LENGTH){
             if (in.readableBytes() > 1000){

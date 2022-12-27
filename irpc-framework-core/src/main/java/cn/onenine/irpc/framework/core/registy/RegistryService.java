@@ -40,6 +40,4 @@ public interface RegistryService {
      */
     void doUnSubscribe(URL url);
 
-
-
 }

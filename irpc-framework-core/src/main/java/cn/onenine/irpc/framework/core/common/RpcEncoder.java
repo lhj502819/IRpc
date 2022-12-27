@@ -12,9 +12,12 @@ import io.netty.handler.codec.MessageToByteEncoder;
  * @since 2022/12/17 11:02
  */
 public class RpcEncoder extends MessageToByteEncoder<RpcProtocol> {
+
+    @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, RpcProtocol msg, ByteBuf out) throws Exception {
         out.writeShort(msg.getMagicNumber());
         out.writeInt(msg.getContentLength());
         out.writeBytes(msg.getContent());
     }
+    
 }

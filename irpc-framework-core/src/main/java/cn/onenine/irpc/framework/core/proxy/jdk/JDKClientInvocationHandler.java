@@ -34,6 +34,7 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
     }
 
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
         RpcInvocation rpcInvocation = new RpcInvocation();
