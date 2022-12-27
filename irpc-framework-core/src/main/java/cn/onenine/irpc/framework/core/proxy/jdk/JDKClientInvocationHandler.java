@@ -27,11 +27,15 @@ public class JDKClientInvocationHandler implements InvocationHandler {
 
     private Class<?> clazz;
 
-    private ClientConfig clientConfig ;
+    private Long timeout ;
 
-    public JDKClientInvocationHandler(Class<?> clazz) {
+
+    public JDKClientInvocationHandler(Class<?> clazz,Long executeTimeout) {
         this.clazz = clazz;
-        this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
+        if (executeTimeout == null){
+            throw new IllegalArgumentException("executeTimeout must not null and gt 0 ");
+        }
+        this.timeout = executeTimeout;
     }
 
     @Override
@@ -47,7 +51,7 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         SEND_QUEUE.add(rpcInvocation);
         long beginTime = System.currentTimeMillis();
         //客户端请求超时的判断依据
-        while (System.currentTimeMillis() - beginTime < 3 * 10000){
+        while (System.currentTimeMillis() - beginTime < timeout){
             Object object = RESP_MAP.get(rpcInvocation.getUuid());
             if (object instanceof  RpcInvocation){
                 return ((RpcInvocation)object).getResponse();

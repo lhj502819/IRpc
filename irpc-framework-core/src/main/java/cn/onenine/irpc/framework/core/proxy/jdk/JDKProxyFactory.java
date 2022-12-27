@@ -1,5 +1,6 @@
 package cn.onenine.irpc.framework.core.proxy.jdk;
 
+import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
 import cn.onenine.irpc.framework.core.proxy.ProxyFactory;
 
 import java.lang.reflect.Proxy;
@@ -12,8 +13,9 @@ import java.lang.reflect.Proxy;
  * @since 2022/12/17 13:54
  */
 public class JDKProxyFactory implements ProxyFactory {
+    @Override
     public <T> T getProxy(Class clazz) throws Throwable {
         return (T) Proxy.newProxyInstance(clazz.getClassLoader(),
-                new Class[]{clazz},new JDKClientInvocationHandler(clazz));
+                new Class[]{clazz}, new JDKClientInvocationHandler(clazz, PropertiesBootstrap.loadClientConfigFromLocal().getCallTimeout()));
     }
 }
