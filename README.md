@@ -5,7 +5,13 @@
 - 随着调用方的增加，如何对服务调用者的数据进行监控呢？
 - 服务提供者下线了，该如何通知到服务调用方？
 
-
+**实现的功能**
+- [x] 基于zookeeper作为注册中心进行了统一的访问接口封装与实现，并且能够支持日后其他注册中心的拓展。
+- [x] 当服务提供方发生变更的时候，借助注册中心通知到客户端做本地调用表的一个更新操作。
+- [x] 当服务订阅的时候需要告知注册中心修改节点数据，方便日后可以针对调用者做一些数据统计与监控的功能。
+- [x] 统一将节点的更新后的相关操作通过事件的机制来实现代码解偶。
+- [x] 将项目中常用的一些缓存数据按照服务端和客户端两类角色进行分开管理。
+- [x] 将对于netty连接的管理操作统一封装在了ConnectionHandler类中，以及将之前硬编码的配置信息都迁移到了properties配置文件中，并设计了PropertiesBootst rap类进行管理。
 
 ## 接入注册中心
 
@@ -126,6 +132,52 @@ public class RpcInvocation {
      */
     private Object response;
     ...省略部分代码...
+}
+```
+### 将硬编码的配置信息抽离到配置文件中
+```java
+public class PropertiesBootstrap {
+
+    private volatile boolean configIsReady;
+
+    public static final String SERVER_PORT = "irpc.serverPort";
+
+    public static final String REGISTER_ADDRESS = "irpc.registerAddr";
+
+    public static final String APPLICATION_NAME = "irpc.applicationName";
+
+    public static final String PROXY_TYPE = "irpc.proxyType";
+
+    public static final String CALL_TIMEOUT = "irpc.call.timeout";
+
+    public static ServerConfig loadServerConfigFromLocal(){
+        try {
+            PropertiesLoader.loadConfiguration();;
+        }catch (IOException e){
+            throw new RuntimeException("loadServerConfigFromLocal fail,e is  {}",e);
+        }
+
+        ServerConfig serverConfig = new ServerConfig();
+        serverConfig.setPort(PropertiesLoader.getPropertiesInteger(SERVER_PORT));
+        serverConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
+        serverConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
+        return serverConfig;
+    }
+
+    public static ClientConfig loadClientConfigFromLocal(){
+        try {
+            PropertiesLoader.loadConfiguration();;
+        }catch (IOException e){
+            throw new RuntimeException("loadClientConfigFromLocal fail,e is {}" , e);
+        }
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
+        clientConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
+        clientConfig.setProxyType(PropertiesLoader.getPropertiesStr(PROXY_TYPE));
+        clientConfig.setCallTimeout(Long.parseLong(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT))));
+        return clientConfig;
+    }
 }
 ```
 
@@ -284,6 +336,8 @@ class AsyncSendJob implements Runnable {
         }
     }
 ```
+
+
 
 
 
