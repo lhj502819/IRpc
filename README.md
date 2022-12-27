@@ -183,6 +183,7 @@ public class PropertiesBootstrap {
 
 ## Provider服务提供方
 ### 调用注册中心相关API注册服务
+程序启动时可调用此API进行服务暴露注册
 ```java
 public void exportService(Object serviceBean){
     if (serviceBean.getClass().getInterfaces().length == 0){
