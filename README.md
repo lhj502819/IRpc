@@ -181,7 +181,7 @@ public class PropertiesBootstrap {
 }
 ```
 
-## Provider注册
+## Provider服务提供方
 ### 调用注册中心相关API注册服务
 ```java
 public void exportService(Object serviceBean){
@@ -228,7 +228,7 @@ private void batchExportUrl() {
 ```
 
 
-## Consumer调用方
+## Consumer服务调用方
 ### 封装对通过netty对provider的一系列连接API
 可对provider发起连接、断开连接以及获取每个连接的ChannelFuture
 ```java
