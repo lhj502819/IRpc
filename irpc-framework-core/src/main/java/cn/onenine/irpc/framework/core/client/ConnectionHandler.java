@@ -2,6 +2,7 @@ package cn.onenine.irpc.framework.core.client;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.onenine.irpc.framework.core.common.ChannelFutureWrapper;
+import cn.onenine.irpc.framework.core.router.Selector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 
@@ -9,8 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.CONNECT_MAP;
-import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.SERVER_ADDRESS;
+import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.*;
 
 /**
  * Description：将连接的建立、断开、按照服务名筛选等功能都封装在了一起，
@@ -62,7 +62,12 @@ public class ConnectionHandler {
         }
 
         channelFutureWrappers.add(channelFutureWrapper);
+        //例如com.sise.test.UserService会被放入到一个Map集合中，key是服务的名字，value是对应的channel通道的List集合
         CONNECT_MAP.put(providerServiceName,channelFutureWrappers);
+
+        Selector selector = new Selector();
+        selector.setProviderServiceName(providerServiceName);
+        IROUTER.refreshRouterArr(selector);
     }
 
 
