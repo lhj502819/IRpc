@@ -228,7 +228,7 @@ private void batchExportUrl() {
 ```
 
 
-## Consumer订阅
+## Consumer调用方
 ### 封装对通过netty对provider的一系列连接API
 可对provider发起连接、断开连接以及获取每个连接的ChannelFuture
 ```java
