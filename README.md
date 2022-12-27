@@ -13,6 +13,8 @@
 - [x] 将项目中常用的一些缓存数据按照服务端和客户端两类角色进行分开管理。
 - [x] 将对于netty连接的管理操作统一封装在了ConnectionHandler类中，以及将之前硬编码的配置信息都迁移到了properties配置文件中，并设计了PropertiesBootst rap类进行管理。
 
+**架构图**
+![img_1.png](img_1.png)
 ## 接入注册中心
 
 ### 抽象注册中心相关操作
@@ -337,6 +339,7 @@ class AsyncSendJob implements Runnable {
         }
     }
 ```
+
 
 
 
