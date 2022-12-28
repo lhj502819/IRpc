@@ -18,6 +18,15 @@ public class ClientConfig {
      */
     private long callTimeout = 3000;
 
+    private String routeStrategy;
+
+    public String getRouteStrategy() {
+        return routeStrategy;
+    }
+
+    public void setRouteStrategy(String routeStrategy) {
+        this.routeStrategy = routeStrategy;
+    }
 
     public String getApplicationName() {
         return applicationName;

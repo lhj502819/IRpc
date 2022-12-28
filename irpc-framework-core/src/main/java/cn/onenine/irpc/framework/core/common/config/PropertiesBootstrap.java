@@ -26,6 +26,8 @@ public class PropertiesBootstrap {
 
     public static final String CALL_TIMEOUT = "irpc.call.timeout";
 
+    public static final String ROUTE_STRATEGY = "irpc.routerStrategy";
+
     public static ServerConfig loadServerConfigFromLocal(){
         try {
             PropertiesLoader.loadConfiguration();;
@@ -37,6 +39,7 @@ public class PropertiesBootstrap {
         serverConfig.setPort(PropertiesLoader.getPropertiesInteger(SERVER_PORT));
         serverConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
         serverConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
+
         return serverConfig;
     }
 
@@ -52,6 +55,7 @@ public class PropertiesBootstrap {
         clientConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
         clientConfig.setProxyType(PropertiesLoader.getPropertiesStr(PROXY_TYPE));
         clientConfig.setCallTimeout(Long.parseLong(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT))));
+        clientConfig.setRouteStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
         return clientConfig;
     }
 }

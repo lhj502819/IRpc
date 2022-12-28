@@ -2,16 +2,22 @@ package cn.onenine.irpc.framework.core.registy.zookeeper;
 
 import cn.onenine.irpc.framework.core.common.event.IRpcEvent;
 import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
+import cn.onenine.irpc.framework.core.common.event.IRpcNodeChangeEvent;
 import cn.onenine.irpc.framework.core.common.event.IRpcUpdateEvent;
 import cn.onenine.irpc.framework.core.common.event.data.URLChangeWrapper;
 import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Description：负责对Zookeeper完成服务注册、服务订阅、服务下线等相关实际操作
@@ -34,17 +40,35 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
 
     @Override
     public void doAfterSubscribe(URL url) {
-        String newServerNodePath = ROOT + "/" + url.getServiceName() + "/provider";
+        String newServerNodePath = ROOT + "/" + url.getParameters().get("servicePath");
         //监听是否有新的服务注册
         watchChildNodeData(newServerNodePath);
-
+        //遍历当前服务下所有的provider节点信息，添加监听
         String providerIps = url.getParameters().get("providerIps");
+        List<String> provideIpList = JSON.parseArray(providerIps, String.class);
+        for (String providerIp : provideIpList) {
+            watchNodeDataChange(newServerNodePath + "/" + providerIp);
+        }
+    }
+
+    private void watchNodeDataChange(String newServerNodePath) {
+        zkClient.watchNodeData(newServerNodePath, watchedEvent -> {
+
+            String path = watchedEvent.getPath();
+            String nodeData = zkClient.getNodeData(path);
+            nodeData = nodeData.replace(";","/");
+            ProviderNodeInfo providerNodeInfo = URL.buildURLFromUrlStr(nodeData);
+            IRpcEvent rpcEvent = new IRpcNodeChangeEvent(providerNodeInfo);
+            IRpcListenerLoader.sendEvent(rpcEvent);
+
+            watchNodeDataChange(newServerNodePath);
+        });
     }
 
     private void watchChildNodeData(String newServerNodePath) {
 
         zkClient.watchChildNodeData(newServerNodePath, watchedEvent -> {
-            logger.info("监听到事件：{}",watchedEvent);
+            logger.info("监听到事件：{}", watchedEvent);
             String path = watchedEvent.getPath();
             List<String> childrenDataList = zkClient.getChildrenData(path);
             URLChangeWrapper urlChangeWrapper = new URLChangeWrapper();
@@ -76,7 +100,7 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
 
         String urlStr = URL.buildProviderUrlStr(url);
         if (!zkClient.existNode(getProviderPath(url))) {
-            zkClient.createTemporaryData(getProviderPath(url),urlStr);
+            zkClient.createTemporaryData(getProviderPath(url), urlStr);
         }
         super.subscribe(url);
     }
@@ -95,5 +119,16 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
     public void doUnSubscribe(URL url) {
         zkClient.deleteNode(getConsumerPath(url));
         super.doUnSubscribe(url);
+    }
+
+    @Override
+    public Map<String, String> getServiceWeightMap(String serviceName) {
+        List<String> nodeDataList = zkClient.getChildrenData(ROOT + "/" + serviceName + "/provider");
+        Map<String, String> result = new HashMap<>();
+        for (String ipAndPort : nodeDataList) {
+            String nodeData = zkClient.getNodeData(ROOT + "/" + serviceName + "/provider/" + ipAndPort);
+            result.put(ipAndPort, nodeData);
+        }
+        return result;
     }
 }

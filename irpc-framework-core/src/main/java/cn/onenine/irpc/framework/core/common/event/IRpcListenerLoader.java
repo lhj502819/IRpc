@@ -2,6 +2,7 @@ package cn.onenine.irpc.framework.core.common.event;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.onenine.irpc.framework.core.common.event.listener.IRpcListener;
+import cn.onenine.irpc.framework.core.common.event.listener.ProviderNodeDataChangeListener;
 import cn.onenine.irpc.framework.core.common.event.listener.ServiceUpdateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ public class IRpcListenerLoader {
 
     public void init() {
         registerListener(new ServiceUpdateListener());
+        registerListener(new ProviderNodeDataChangeListener());
     }
 
     /**

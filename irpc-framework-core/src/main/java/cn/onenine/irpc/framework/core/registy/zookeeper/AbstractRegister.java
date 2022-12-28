@@ -4,6 +4,7 @@ import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
 
 import java.util.List;
+import java.util.Map;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.SUBSCRIBE_SERVICE_LIST;
 import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
@@ -30,7 +31,7 @@ public abstract class AbstractRegister implements RegistryService {
 
     @Override
     public void subscribe(URL url) {
-        SUBSCRIBE_SERVICE_LIST.add(url.getServiceName());
+        SUBSCRIBE_SERVICE_LIST.add(url);
     }
 
     @Override
@@ -52,13 +53,17 @@ public abstract class AbstractRegister implements RegistryService {
      *
      * @param url
      */
-    public void doAfterSubscribe(URL url){
-        throw new UnsupportedOperationException();
-    }
+    public abstract void doAfterSubscribe(URL url);
 
     /**
      * 留给子类扩展
      */
     public abstract List<String> getProviderIps(String serviceName);
+
+    /**
+     * 获取服务的权重信息
+     * @return key:{ip:port}  value:provider信息
+     */
+    public abstract Map<String,String> getServiceWeightMap(String serviceName);
 
 }

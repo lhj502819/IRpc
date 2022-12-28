@@ -13,6 +13,10 @@ public class ProviderNodeInfo {
 
     private String address;
 
+    private Integer weight;
+
+    private String registryTime;
+
     public String getServiceName() {
         return serviceName;
     }
@@ -27,5 +31,21 @@ public class ProviderNodeInfo {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public Integer getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Integer weight) {
+        this.weight = weight;
+    }
+
+    public String getRegistryTime() {
+        return registryTime;
+    }
+
+    public void setRegistryTime(String registryTime) {
+        this.registryTime = registryTime;
     }
 }
