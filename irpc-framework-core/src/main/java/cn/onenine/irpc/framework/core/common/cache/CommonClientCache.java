@@ -4,7 +4,6 @@ import cn.onenine.irpc.framework.core.common.ChannelFutureWrapper;
 import cn.onenine.irpc.framework.core.common.RpcInvocation;
 import cn.onenine.irpc.framework.core.config.ClientConfig;
 import cn.onenine.irpc.framework.core.registy.URL;
-import cn.onenine.irpc.framework.core.router.IRouter;
 
 import java.util.HashSet;
 import java.util.List;
@@ -41,13 +40,5 @@ public class CommonClientCache {
 
     //每次进行远程调用的时候都是从这里面去选择服务提供者
     public static Map<String,List<ChannelFutureWrapper>> CONNECT_MAP = new ConcurrentHashMap<>();
-
-    //随机请求的Map
-    public static Map<String,ChannelFutureWrapper[]> SERVICE_ROUTER_MAP = new ConcurrentHashMap<>();
-
-    /**
-     * 根据配置进行初始化
-     */
-    public static IRouter IROUTER;
 
 }
