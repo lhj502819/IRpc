@@ -16,11 +16,13 @@ public class DataServiceImpl implements DataService {
 
     private Logger logger = LoggerFactory.getLogger(DataServiceImpl.class);
 
+    @Override
     public String sendData(String body) {
         logger.info("已收到的参数长度：" + body.length());
         return "success";
     }
 
+    @Override
     public List<String> getList() {
         ArrayList<String> arrayList = new ArrayList();
         arrayList.add("nine 9");
