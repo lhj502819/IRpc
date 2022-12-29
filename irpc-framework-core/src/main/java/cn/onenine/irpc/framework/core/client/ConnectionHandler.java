@@ -99,11 +99,13 @@ public class ConnectionHandler {
      * 默认走随机策略获取ChannelFuture
      */
     public static ChannelFuture getChannelFuture(String providerServiceName) {
-        List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(providerServiceName);
-        if (CollectionUtil.isEmpty(channelFutureWrappers)) {
-            throw new RuntimeException("no provider exist for " + providerServiceName);
+        Selector selector = new Selector();
+        selector.setProviderServiceName(providerServiceName);
+        ChannelFutureWrapper channelFutureWrapper = IROUTER.select(selector);
+        if (channelFutureWrapper == null) {
+            String message = String.format("no service %s provider", providerServiceName);
+            throw new RuntimeException(message);
         }
-
-        return channelFutureWrappers.get(new Random().nextInt(channelFutureWrappers.size())).getChannelFuture();
+        return channelFutureWrapper.getChannelFuture();
     }
 }

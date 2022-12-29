@@ -3,6 +3,7 @@ package cn.onenine.irpc.framework.core.common.event;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.onenine.irpc.framework.core.common.event.listener.IRpcListener;
 import cn.onenine.irpc.framework.core.common.event.listener.ProviderNodeDataChangeListener;
+import cn.onenine.irpc.framework.core.common.event.listener.ServiceDestroyListener;
 import cn.onenine.irpc.framework.core.common.event.listener.ServiceUpdateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,13 +31,14 @@ public class IRpcListenerLoader {
     private static ExecutorService eventThreadPool = Executors.newFixedThreadPool(2);
 
 
-    public static void registerListener(IRpcListener listener) {
+    public static void registerListener(IRpcListener<?> listener) {
         iRpcListeners.add(listener);
     }
 
     public void init() {
         registerListener(new ServiceUpdateListener());
         registerListener(new ProviderNodeDataChangeListener());
+        registerListener(new ServiceDestroyListener());
     }
 
     /**
@@ -70,6 +71,25 @@ public class IRpcListenerLoader {
                         logger.error("sendEvent error", e);
                     }
                 });
+            }
+        }
+    }
+
+    public static void sendSyncEvent(final IRpcEvent iRpcEvent) {
+        if (CollectionUtil.isEmpty(iRpcListeners)) {
+            return;
+        }
+
+        for (final IRpcListener iRpcListener : iRpcListeners) {
+            //判断Class的泛型
+            Class<?> type = getInterfaceT(iRpcListener);
+            if (type.equals(iRpcEvent.getClass())) {
+                //是当前listener监听的事件类型
+                try {
+                    iRpcListener.callBack(iRpcEvent.getData());
+                } catch (Exception e) {
+                    logger.error("sendEvent error", e);
+                }
             }
         }
     }

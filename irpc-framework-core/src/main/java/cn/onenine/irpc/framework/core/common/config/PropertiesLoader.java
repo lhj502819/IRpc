@@ -22,7 +22,7 @@ public class PropertiesLoader {
 
     private static Map<String, String> propertiesMap = new HashMap<>();
 
-    private static String DEFAULT_PROPERTIES_FILE = "E:\\workspaces\\IRpc\\irpc-framework-core\\src\\main\\resources\\irpc.properties";
+    private static String DEFAULT_PROPERTIES_FILE = "E:\\workspace\\IRpc\\irpc-framework-core\\src\\main\\resources\\irpc.properties";
 
     public static void loadConfiguration() throws IOException {
         if (properties != null) {

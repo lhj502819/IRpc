@@ -127,6 +127,7 @@ public class Server {
         iRpcListenerLoader = new IRpcListenerLoader();
         iRpcListenerLoader.init();
         server.exportService(new DataServiceImpl());
+        server.exportService(new UserServiceImpl());
         server.startApplication();
         //注册destroy钩子函数
         ApplicationShutdownHook.registryShutdownHook();
