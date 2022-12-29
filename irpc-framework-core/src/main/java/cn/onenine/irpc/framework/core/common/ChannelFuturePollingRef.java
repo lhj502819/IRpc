@@ -1,7 +1,5 @@
 package cn.onenine.irpc.framework.core.common;
 
-import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.SERVICE_ROUTER_MAP;

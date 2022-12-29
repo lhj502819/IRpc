@@ -101,6 +101,7 @@ public class ConnectionHandler {
     public static ChannelFuture getChannelFuture(String providerServiceName) {
         Selector selector = new Selector();
         selector.setProviderServiceName(providerServiceName);
+        //通过指定的路由算法选择一个Provider ChannelFuture
         ChannelFutureWrapper channelFutureWrapper = IROUTER.select(selector);
         if (channelFutureWrapper == null) {
             String message = String.format("no service %s provider", providerServiceName);

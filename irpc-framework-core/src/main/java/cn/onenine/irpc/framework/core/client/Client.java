@@ -198,6 +198,5 @@ public class Client {
         } else if (ROTATE_ROUTER_TYPE.equals(routeStrategy)) {
             IROUTER = new RotateRouterImpl();
         }
-
     }
 }

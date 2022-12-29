@@ -19,7 +19,7 @@ public interface IRouter {
     void refreshRouterArr(Selector selector);
 
     /**
-     * 获取对应service的连接通道
+     * 获取对应provider的连接通道
      * @param selector
      * @return
      */
