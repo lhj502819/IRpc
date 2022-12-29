@@ -3,6 +3,7 @@ package cn.onenine.irpc.framework.core.server;
 import cn.onenine.irpc.framework.core.common.RpcDecoder;
 import cn.onenine.irpc.framework.core.common.RpcEncoder;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
+import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
 import cn.onenine.irpc.framework.core.common.utils.CommonUtils;
 import cn.onenine.irpc.framework.core.config.ServerConfig;
 import cn.onenine.irpc.framework.core.registy.RegistryService;
@@ -16,8 +17,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
-import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.PROVIDER_URL_SET;
+import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.*;
 
 /**
  * @author li.hongjian
@@ -32,7 +32,8 @@ public class Server {
 
     private ServerConfig serverConfig;
 
-    private RegistryService registryService;
+    private static IRpcListenerLoader iRpcListenerLoader;
+
 
     public ServerConfig getServerConfig() {
         return serverConfig;
@@ -79,8 +80,8 @@ public class Server {
         if (classes.length >1){
             throw new RuntimeException("service must only had one interfaces!");
         }
-        if (registryService == null){
-            registryService = new ZookeeperRegister(serverConfig.getRegisterAddr());
+        if (REGISTRY_SERVICE == null){
+            REGISTRY_SERVICE = new ZookeeperRegister(serverConfig.getRegisterAddr());
         }
         //默认选择该对象的第一个实现
         Class<?> interfaceClass = classes[0];
@@ -105,7 +106,7 @@ public class Server {
                 throw new RuntimeException(e);
             }
             for (URL url : PROVIDER_URL_SET) {
-                registryService.register(url);
+                REGISTRY_SERVICE.register(url);
             }
         });
 
@@ -123,8 +124,12 @@ public class Server {
     public static void main(String[] args) throws InterruptedException {
         Server server = new Server();
         server.initServerConfig();
+        iRpcListenerLoader = new IRpcListenerLoader();
+        iRpcListenerLoader.init();
         server.exportService(new DataServiceImpl());
         server.startApplication();
+        //注册destroy钩子函数
+        ApplicationShutdownHook.registryShutdownHook();
     }
 
 }
