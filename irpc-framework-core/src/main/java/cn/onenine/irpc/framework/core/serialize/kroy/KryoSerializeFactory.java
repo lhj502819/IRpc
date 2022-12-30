@@ -17,12 +17,19 @@ import java.io.ByteArrayOutputStream;
  */
 public class KryoSerializeFactory<T> implements SerializeFactory {
 
-    private Kryo kryo;
+    /**
+     * 由于 Kryo 不是线程安全的，并且构建和配置 Kryo 实例的成本相对较高，因此在多线程环境中可能会考虑使用 ThreadLocal 或池化。
+     *
+     * 具体可查看Github wiki：https://github.com/EsotericSoftware/kryo#input
+     */
+    static private final ThreadLocal<Kryo> kryos = new ThreadLocal<Kryo>() {
+        protected Kryo initialValue() {
+            Kryo kryo = new Kryo();
+            // Configure the Kryo instance.
+            return kryo;
+        };
+    };
 
-    public KryoSerializeFactory(Class<T> tClass) {
-        kryo = new Kryo();
-        kryo.register(tClass);
-    }
 
     @Override
     public <T> byte[] serialize(T t) {
@@ -30,6 +37,8 @@ public class KryoSerializeFactory<T> implements SerializeFactory {
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             output = new Output(byteArrayOutputStream);
+            Kryo kryo = kryos.get();
+            kryo.register(t.getClass());
             kryo.writeClassAndObject(output, t);
             return output.toBytes();
         } catch (Exception e) {
@@ -47,6 +56,7 @@ public class KryoSerializeFactory<T> implements SerializeFactory {
         try {
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
             input = new Input(byteArrayInputStream);
+            Kryo kryo = kryos.get();
             return kryo.readObject(input, clazz);
         } catch (Exception e) {
             throw new RuntimeException(e);

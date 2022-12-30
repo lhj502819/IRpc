@@ -15,6 +15,10 @@ import cn.onenine.irpc.framework.core.registy.zookeeper.AbstractRegister;
 import cn.onenine.irpc.framework.core.registy.zookeeper.ZookeeperRegister;
 import cn.onenine.irpc.framework.core.router.RandomRouterImpl;
 import cn.onenine.irpc.framework.core.router.RotateRouterImpl;
+import cn.onenine.irpc.framework.core.serialize.fastjson.FastJsonSerializeFactory;
+import cn.onenine.irpc.framework.core.serialize.hessian.HessianSerializeFactory;
+import cn.onenine.irpc.framework.core.serialize.jdk.JdkSerializeFactory;
+import cn.onenine.irpc.framework.core.serialize.kroy.KryoSerializeFactory;
 import cn.onenine.irpc.framework.interfaces.DataService;
 import com.alibaba.fastjson2.JSONObject;
 import io.netty.bootstrap.Bootstrap;
@@ -32,8 +36,9 @@ import java.util.Map;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.IROUTER;
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.URL_MAP;
-import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.RANDOM_ROUTER_TYPE;
-import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.ROTATE_ROUTER_TYPE;
+import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.SERVER_SERIALIZE_FACTORY;
+import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.*;
+import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.KRYO_SERIALIZE_TYPE;
 
 /**
  * @author li.hongjian
@@ -198,5 +203,24 @@ public class Client {
         } else if (ROTATE_ROUTER_TYPE.equals(routeStrategy)) {
             IROUTER = new RotateRouterImpl();
         }
+
+        String clientSerialize = clientConfig.getClientSerialize();
+        switch (clientSerialize) {
+            case JDK_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
+                break;
+            case HESSIAN2_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new HessianSerializeFactory();
+                break;
+            case FAST_JSON_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
+                break;
+            case KRYO_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new KryoSerializeFactory();
+                break;
+            default:
+                throw new RuntimeException("no match serialize type for " + clientSerialize);
+        }
+        System.out.println("clientSerialize is " + clientSerialize);
     }
 }

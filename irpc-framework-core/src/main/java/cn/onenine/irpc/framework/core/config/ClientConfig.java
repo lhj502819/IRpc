@@ -20,6 +20,19 @@ public class ClientConfig {
 
     private String routeStrategy;
 
+    /**
+     * 序列化方式 hessian,kryo,dk,fastJson2
+     */
+    private String clientSerialize;
+
+    public String getClientSerialize() {
+        return clientSerialize;
+    }
+
+    public void setClientSerialize(String clientSerialize) {
+        this.clientSerialize = clientSerialize;
+    }
+
     public String getRouteStrategy() {
         return routeStrategy;
     }

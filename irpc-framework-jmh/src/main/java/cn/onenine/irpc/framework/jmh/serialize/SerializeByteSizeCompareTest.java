@@ -43,7 +43,7 @@ public class SerializeByteSizeCompareTest {
         System.out.println("hessian serialize size is " + result.length);
     }
     public void kroySerializeSizeTest(){
-        SerializeFactory serializeFactory = new KryoSerializeFactory(User.class);
+        SerializeFactory serializeFactory = new KryoSerializeFactory();
         User user = buildUserDefault();
         byte[] result = serializeFactory.serialize(user);
         System.out.println("kroy serialize size is " + result.length);

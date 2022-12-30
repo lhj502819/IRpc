@@ -53,7 +53,7 @@ public class SerializeCompareTest {
 
     @Benchmark
     public void kryoSerializeTest(){
-        SerializeFactory serializeFactory = new KryoSerializeFactory(User.class);
+        SerializeFactory serializeFactory = new KryoSerializeFactory();
         User user = buildUserDefault();
         byte[] result = serializeFactory.serialize(user);
         User deserializeUser = serializeFactory.deserialize(result,User.class);

@@ -9,6 +9,10 @@ import cn.onenine.irpc.framework.core.config.ServerConfig;
 import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.registy.zookeeper.ZookeeperRegister;
+import cn.onenine.irpc.framework.core.serialize.fastjson.FastJsonSerializeFactory;
+import cn.onenine.irpc.framework.core.serialize.hessian.HessianSerializeFactory;
+import cn.onenine.irpc.framework.core.serialize.jdk.JdkSerializeFactory;
+import cn.onenine.irpc.framework.core.serialize.kroy.KryoSerializeFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -18,6 +22,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.*;
+import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.*;
 
 /**
  * @author li.hongjian
@@ -118,6 +123,24 @@ public class Server {
     public void initServerConfig(){
         ServerConfig serverConfig = PropertiesBootstrap.loadServerConfigFromLocal();
         this.setServerConfig(serverConfig);
+        String serverSerialize = serverConfig.getServerSerialize();
+        switch (serverSerialize){
+            case JDK_SERIALIZE_TYPE :
+                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
+                break;
+            case HESSIAN2_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new HessianSerializeFactory();
+                break;
+            case FAST_JSON_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
+                break;
+            case KRYO_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new KryoSerializeFactory();
+                break;
+            default:
+                throw new RuntimeException("no match serialize type for " +serverSerialize);
+        }
+        System.out.println("serverSerialize is "+serverSerialize);
     }
 
 

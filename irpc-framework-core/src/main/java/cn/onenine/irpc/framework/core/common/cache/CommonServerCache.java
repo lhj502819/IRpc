@@ -2,6 +2,7 @@ package cn.onenine.irpc.framework.core.common.cache;
 
 import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
+import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -22,5 +23,7 @@ public class CommonServerCache {
     public static Set<URL> PROVIDER_URL_SET = new CopyOnWriteArraySet<>();
 
     public static RegistryService REGISTRY_SERVICE;
+
+    public static SerializeFactory SERVER_SERIALIZE_FACTORY;
 
 }

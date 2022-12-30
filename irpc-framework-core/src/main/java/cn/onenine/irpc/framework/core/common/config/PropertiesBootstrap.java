@@ -28,6 +28,10 @@ public class PropertiesBootstrap {
 
     public static final String ROUTE_STRATEGY = "irpc.routerStrategy";
 
+    public static final String SERVER_SERIALIZE_TYPE="irpc.serverSerialize";
+
+    public static final String CLIENT_SERIALIZE_TYPE="irpc.clientSerialize";
+
     public static ServerConfig loadServerConfigFromLocal(){
         try {
             PropertiesLoader.loadConfiguration();;
@@ -39,7 +43,7 @@ public class PropertiesBootstrap {
         serverConfig.setPort(PropertiesLoader.getPropertiesInteger(SERVER_PORT));
         serverConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
         serverConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
-
+        serverConfig.setServerSerialize(PropertiesLoader.getPropertiesStr(SERVER_SERIALIZE_TYPE));
         return serverConfig;
     }
 
@@ -56,6 +60,7 @@ public class PropertiesBootstrap {
         clientConfig.setProxyType(PropertiesLoader.getPropertiesStr(PROXY_TYPE));
         clientConfig.setCallTimeout(Long.parseLong(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT))));
         clientConfig.setRouteStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
+        clientConfig.setClientSerialize(PropertiesLoader.getPropertiesStr(CLIENT_SERIALIZE_TYPE));
         return clientConfig;
     }
 }
