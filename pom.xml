@@ -11,6 +11,7 @@
     <modules>
         <module>irpc-framework-core</module>
         <module>irpc-framework-interface</module>
+        <module>irpc-framework-jmh</module>
     </modules>
 
     <packaging>pom</packaging>

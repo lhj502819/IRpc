@@ -18,7 +18,7 @@ public class FastJsonSerializeFactory implements SerializeFactory {
     }
 
     @Override
-    public <T> T deSerialize(byte[] data, Class<T> clazz) {
+    public <T> T deserialize(byte[] data, Class<T> clazz) {
         return JSONObject.parseObject(new String(data), clazz);
     }
 }

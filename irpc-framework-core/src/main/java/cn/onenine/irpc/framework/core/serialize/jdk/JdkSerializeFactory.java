@@ -30,7 +30,7 @@ public class JdkSerializeFactory implements SerializeFactory {
     }
 
     @Override
-    public <T> T deSerialize(byte[] data, Class<T> clazz) {
+    public <T> T deserialize(byte[] data, Class<T> clazz) {
         ByteArrayInputStream is = new ByteArrayInputStream(data);
         try {
             ObjectInputStream input = new ObjectInputStream(is);

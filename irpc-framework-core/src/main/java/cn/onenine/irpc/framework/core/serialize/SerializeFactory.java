@@ -17,6 +17,6 @@ public interface SerializeFactory {
     /**
      * 反序列化
      */
-    <T> T deSerialize(byte[] data,Class<T> clazz);
+    <T> T deserialize(byte[] data, Class<T> clazz);
 
 }

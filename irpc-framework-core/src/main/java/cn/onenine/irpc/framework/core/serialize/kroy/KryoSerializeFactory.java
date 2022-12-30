@@ -15,27 +15,25 @@ import java.io.ByteArrayOutputStream;
  * @email lhj502819@163.com
  * @since 2022/12/30 17:35
  */
-public class KryoSerializeFactory implements SerializeFactory {
+public class KryoSerializeFactory<T> implements SerializeFactory {
 
-    private static final ThreadLocal<Kryo> kryos = new ThreadLocal<Kryo>() {
-        @Override
-        protected Kryo initialValue() {
-            Kryo kryo = new Kryo();
-            return kryo;
-        }
-    };
+    private Kryo kryo;
+
+    public KryoSerializeFactory(Class<T> tClass) {
+        kryo = new Kryo();
+        kryo.register(tClass);
+    }
 
     @Override
     public <T> byte[] serialize(T t) {
         Output output = null;
         try {
-            Kryo kryo = kryos.get();
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             output = new Output(byteArrayOutputStream);
             kryo.writeClassAndObject(output, t);
             return output.toBytes();
         } catch (Exception e) {
-            throw new RuntimeException("KryoSerializeFactory serialize error", e);
+            throw new RuntimeException(e);
         } finally {
             if (output != null) {
                 output.close();
@@ -44,19 +42,19 @@ public class KryoSerializeFactory implements SerializeFactory {
     }
 
     @Override
-    public <T> T deSerialize(byte[] data, Class<T> clazz) {
+    public <T> T deserialize(byte[] data, Class<T> clazz) {
         Input input = null;
         try {
-            Kryo kryo = kryos.get();
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
             input = new Input(byteArrayInputStream);
-            return (T) kryo.readClassAndObject(input);
+            return kryo.readObject(input, clazz);
         } catch (Exception e) {
-            throw new RuntimeException("KryoSerializeFactory deSerialize error", e);
+            throw new RuntimeException(e);
         } finally {
             if (input != null) {
                 input.close();
             }
         }
     }
+
 }

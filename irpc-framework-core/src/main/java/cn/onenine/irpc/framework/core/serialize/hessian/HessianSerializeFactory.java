@@ -34,7 +34,7 @@ public class HessianSerializeFactory implements SerializeFactory {
     }
 
     @Override
-    public <T> T deSerialize(byte[] data, Class<T> clazz) {
+    public <T> T deserialize(byte[] data, Class<T> clazz) {
         if (data == null) {
             return null;
         }
