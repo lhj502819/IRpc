@@ -6,6 +6,7 @@ import cn.onenine.irpc.framework.core.common.RpcInvocation;
 import cn.onenine.irpc.framework.core.config.ClientConfig;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.router.IRouter;
+import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -50,5 +51,10 @@ public class CommonClientCache {
      * 根据配置进行初始化
      */
     public static IRouter IROUTER;
+
+    /**
+     * 客户端序列化方式
+     */
+    public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
 
 }

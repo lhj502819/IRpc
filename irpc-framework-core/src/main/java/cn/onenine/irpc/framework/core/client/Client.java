@@ -34,9 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
-import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.IROUTER;
-import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.URL_MAP;
-import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.SERVER_SERIALIZE_FACTORY;
+import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.*;
 import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.*;
 import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.KRYO_SERIALIZE_TYPE;
 
@@ -158,12 +156,11 @@ public class Client {
                     //阻塞模式
                     RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
                     //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了ServerHandler
-                    String json = JSONObject.toJSONString(data);
-                    RpcProtocol rpcProtocol = new RpcProtocol(json.getBytes());
+                    RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
                     ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());
                     channelFuture.channel().writeAndFlush(rpcProtocol);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOGGER.error("client call error", e);
                 }
             }
 
@@ -207,16 +204,16 @@ public class Client {
         String clientSerialize = clientConfig.getClientSerialize();
         switch (clientSerialize) {
             case JDK_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
+                CLIENT_SERIALIZE_FACTORY = new JdkSerializeFactory();
                 break;
             case HESSIAN2_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new HessianSerializeFactory();
+                CLIENT_SERIALIZE_FACTORY = new HessianSerializeFactory();
                 break;
             case FAST_JSON_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
+                CLIENT_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
                 break;
             case KRYO_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new KryoSerializeFactory();
+                CLIENT_SERIALIZE_FACTORY = new KryoSerializeFactory();
                 break;
             default:
                 throw new RuntimeException("no match serialize type for " + clientSerialize);
