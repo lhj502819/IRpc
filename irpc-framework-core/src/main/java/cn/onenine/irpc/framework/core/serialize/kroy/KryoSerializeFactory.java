@@ -23,6 +23,7 @@ public class KryoSerializeFactory<T> implements SerializeFactory {
      * 具体可查看Github wiki：https://github.com/EsotericSoftware/kryo#input
      */
     static private final ThreadLocal<Kryo> kryos = new ThreadLocal<Kryo>() {
+        @Override
         protected Kryo initialValue() {
             Kryo kryo = new Kryo();
             // Configure the Kryo instance.

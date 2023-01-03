@@ -163,7 +163,6 @@ public class Client {
                     LOGGER.error("client call error", e);
                 }
             }
-
         }
     }
 
