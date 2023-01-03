@@ -16,8 +16,7 @@ public class ChannelFuturePollingRef {
     /**
      * 对Providers实现轮询访问
      */
-    public ChannelFutureWrapper getChannelFutureWrapper(String serviceName) {
-        ChannelFutureWrapper[] wrappers = SERVICE_ROUTER_MAP.get(serviceName);
+    public ChannelFutureWrapper getChannelFutureWrapper(ChannelFutureWrapper[] wrappers) {
         //自增取余，顺序访问
         //0 % 10 = 0; 1 % 10 = 1; 2 % 10 = 2 ;....;11 % 10 = 1
         long i = referenceTimes.getAndIncrement();

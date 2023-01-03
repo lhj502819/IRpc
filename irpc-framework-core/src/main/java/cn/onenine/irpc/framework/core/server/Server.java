@@ -1,11 +1,15 @@
 package cn.onenine.irpc.framework.core.server;
 
+import cn.hutool.core.util.StrUtil;
 import cn.onenine.irpc.framework.core.common.RpcDecoder;
 import cn.onenine.irpc.framework.core.common.RpcEncoder;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
 import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
 import cn.onenine.irpc.framework.core.common.utils.CommonUtils;
 import cn.onenine.irpc.framework.core.config.ServerConfig;
+import cn.onenine.irpc.framework.core.filter.server.ServerFilterChain;
+import cn.onenine.irpc.framework.core.filter.server.ServerLogFilterImpl;
+import cn.onenine.irpc.framework.core.filter.server.ServerTokenFilterImpl;
 import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.registy.zookeeper.ZookeeperRegister;
@@ -98,7 +102,12 @@ public class Server {
         url.addParameter("host", CommonUtils.getIpAddress());
         url.addParameter("port",String.valueOf(serverConfig.getPort()));
         url.addParameter("group", String.valueOf(serviceWrapper.getGroup()));
+        url.addParameter("limit",String.valueOf(serviceWrapper.getLimit()));
         PROVIDER_URL_SET.add(url);
+        if (StrUtil.isNotBlank(serviceWrapper.getServiceToken())){
+            PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(),serviceWrapper);
+        }
+
     }
 
     /**
@@ -143,6 +152,8 @@ public class Server {
                 throw new RuntimeException("no match serialize type for " +serverSerialize);
         }
         System.out.println("serverSerialize is "+serverSerialize);
+        SERVER_FILTER_CHAIN.addServerFilter(new ServerTokenFilterImpl());
+        SERVER_FILTER_CHAIN.addServerFilter(new ServerLogFilterImpl());
     }
 
 
@@ -151,11 +162,17 @@ public class Server {
         server.initServerConfig();
         iRpcListenerLoader = new IRpcListenerLoader();
         iRpcListenerLoader.init();
-        server.exportService(new ServiceWrapper(new DataServiceImpl()));
-        server.exportService(new ServiceWrapper(new UserServiceImpl()));
-        server.startApplication();
+        ServiceWrapper dataServiceWrapper = new ServiceWrapper(new DataServiceImpl(),"test");
+        dataServiceWrapper.setServiceToken("token-a");
+        dataServiceWrapper.setLimit(2);
+        server.exportService(dataServiceWrapper);
+        ServiceWrapper userServiceWrapper = new ServiceWrapper(new UserServiceImpl(),"dev");
+        userServiceWrapper.setServiceToken("token-b");
+        userServiceWrapper.setLimit(2);
+        server.exportService(userServiceWrapper);
         //注册destroy钩子函数
         ApplicationShutdownHook.registryShutdownHook();
+        server.startApplication();
     }
 
 }

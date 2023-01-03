@@ -1,5 +1,7 @@
 package cn.onenine.irpc.framework.core.router;
 
+import cn.onenine.irpc.framework.core.common.ChannelFutureWrapper;
+
 /**
  * @author li.hongjian
  * @email lhj502819@163.com
@@ -12,6 +14,16 @@ public class Selector {
      * 如：cn.onenine.user.UserService
      */
     private String providerServiceName;
+
+    private ChannelFutureWrapper[] channelFutureWrappers;
+
+    public ChannelFutureWrapper[] getChannelFutureWrappers() {
+        return channelFutureWrappers;
+    }
+
+    public void setChannelFutureWrappers(ChannelFutureWrapper[] channelFutureWrappers) {
+        this.channelFutureWrappers = channelFutureWrappers;
+    }
 
     public String getProviderServiceName() {
         return providerServiceName;

@@ -1,5 +1,6 @@
 package cn.onenine.irpc.framework.core.proxy.jdk;
 
+import cn.onenine.irpc.framework.core.client.RpcReferenceWrapper;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
 import cn.onenine.irpc.framework.core.proxy.ProxyFactory;
 
@@ -14,8 +15,8 @@ import java.lang.reflect.Proxy;
  */
 public class JDKProxyFactory implements ProxyFactory {
     @Override
-    public <T> T getProxy(Class clazz) throws Throwable {
-        return (T) Proxy.newProxyInstance(clazz.getClassLoader(),
-                new Class[]{clazz}, new JDKClientInvocationHandler(clazz, PropertiesBootstrap.loadClientConfigFromLocal().getCallTimeout()));
+    public <T> T getProxy(RpcReferenceWrapper<T> rpcReferenceWrapper) throws Throwable {
+        return (T) Proxy.newProxyInstance(rpcReferenceWrapper.getAimClass().getClassLoader(),
+                new Class[]{rpcReferenceWrapper.getAimClass()}, new JDKClientInvocationHandler(rpcReferenceWrapper, PropertiesBootstrap.loadClientConfigFromLocal().getCallTimeout()));
     }
 }

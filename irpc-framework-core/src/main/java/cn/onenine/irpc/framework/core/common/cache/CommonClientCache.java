@@ -4,6 +4,7 @@ import cn.onenine.irpc.framework.core.common.ChannelFuturePollingRef;
 import cn.onenine.irpc.framework.core.common.ChannelFutureWrapper;
 import cn.onenine.irpc.framework.core.common.RpcInvocation;
 import cn.onenine.irpc.framework.core.config.ClientConfig;
+import cn.onenine.irpc.framework.core.filter.client.ClientFilterChain;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.router.IRouter;
 import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
@@ -35,6 +36,9 @@ public class CommonClientCache {
      */
     public static List<URL> SUBSCRIBE_SERVICE_LIST = new CopyOnWriteArrayList<>();
 
+    /**
+     * key：serviceName value：(key:ip+port value:节点信息)
+     */
     public static Map<String, Map<String, String>> URL_MAP = new ConcurrentHashMap<String, Map<String, String>>();
 
     public static Set<String> SERVER_ADDRESS = new HashSet<>();
@@ -56,5 +60,15 @@ public class CommonClientCache {
      * 客户端序列化方式
      */
     public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
+
+    /**
+     * 客户端过滤器链
+     */
+    public static ClientFilterChain CLIENT_FILTER_CHAIN;
+
+    /**
+     * 客户端配置
+     */
+    public static ClientConfig CLIENT_CONFIG;
 
 }

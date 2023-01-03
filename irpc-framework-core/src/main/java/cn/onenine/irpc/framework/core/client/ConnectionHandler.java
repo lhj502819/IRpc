@@ -2,14 +2,15 @@ package cn.onenine.irpc.framework.core.client;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.onenine.irpc.framework.core.common.ChannelFutureWrapper;
+import cn.onenine.irpc.framework.core.common.RpcInvocation;
+import cn.onenine.irpc.framework.core.registy.URL;
+import cn.onenine.irpc.framework.core.registy.zookeeper.ProviderNodeInfo;
 import cn.onenine.irpc.framework.core.router.Selector;
+import com.google.common.collect.Lists;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.*;
 
@@ -58,8 +59,10 @@ public class ConnectionHandler {
         channelFutureWrapper.setHost(ip);
         channelFutureWrapper.setPort(port);
         String providerUrlInfo = URL_MAP.get(providerServiceName).get(providerIpAndPort);
+        ProviderNodeInfo providerNodeInfo = URL.buildURLFromUrlStr(providerUrlInfo);
         //设置该Channel的权重值
-        channelFutureWrapper.setWeight(Integer.valueOf(providerUrlInfo.substring(providerUrlInfo.lastIndexOf(";") + 1)));
+        channelFutureWrapper.setWeight(providerNodeInfo.getWeight());
+        channelFutureWrapper.setGroup(providerNodeInfo.getGroup());
         SERVER_ADDRESS.add(providerIpAndPort);
         List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(providerServiceName);
         if (CollectionUtil.isEmpty(channelFutureWrappers)) {
@@ -98,15 +101,19 @@ public class ConnectionHandler {
     /**
      * 默认走随机策略获取ChannelFuture
      */
-    public static ChannelFuture getChannelFuture(String providerServiceName) {
-        Selector selector = new Selector();
-        selector.setProviderServiceName(providerServiceName);
-        //通过指定的路由算法选择一个Provider ChannelFuture
-        ChannelFutureWrapper channelFutureWrapper = IROUTER.select(selector);
-        if (channelFutureWrapper == null) {
-            String message = String.format("no service %s provider", providerServiceName);
-            throw new RuntimeException(message);
+    public static ChannelFuture getChannelFuture(RpcInvocation rpcInvocation) {
+        ChannelFutureWrapper[] channelFutureWrappers = SERVICE_ROUTER_MAP.get(rpcInvocation.getTargetServiceName());
+        if (channelFutureWrappers == null || channelFutureWrappers.length == 0) {
+            throw new RuntimeException("no provider exist for " + rpcInvocation.getTargetServiceName());
         }
-        return channelFutureWrapper.getChannelFuture();
+
+        //doFilter
+        CLIENT_FILTER_CHAIN.doFilter(Lists.newArrayList(channelFutureWrappers), rpcInvocation);
+
+        Selector selector = new Selector();
+        selector.setProviderServiceName(rpcInvocation.getTargetServiceName());
+        selector.setChannelFutureWrappers(channelFutureWrappers);
+        //通过指定的路由算法选择一个Provider ChannelFuture
+        return IROUTER.select(selector).getChannelFuture();
     }
 }

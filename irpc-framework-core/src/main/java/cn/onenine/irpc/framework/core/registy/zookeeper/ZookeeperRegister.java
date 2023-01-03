@@ -56,7 +56,6 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
 
             String path = watchedEvent.getPath();
             String nodeData = zkClient.getNodeData(path);
-            nodeData = nodeData.replace(";","/");
             ProviderNodeInfo providerNodeInfo = URL.buildURLFromUrlStr(nodeData);
             IRpcEvent rpcEvent = new IRpcNodeChangeEvent(providerNodeInfo);
             IRpcListenerLoader.sendEvent(rpcEvent);

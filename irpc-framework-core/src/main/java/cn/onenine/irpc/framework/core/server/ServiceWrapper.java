@@ -19,8 +19,39 @@ public class ServiceWrapper {
      */
     private String group = "default";
 
+    /**
+     * 整个应用的token校验
+     */
+    private String serviceToken = "";
+
+    /**
+     * 限流策略
+     */
+    private Integer limit = -1;
+
+    public String getServiceToken() {
+        return serviceToken;
+    }
+
+    public void setServiceToken(String serviceToken) {
+        this.serviceToken = serviceToken;
+    }
+
+    public Integer getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
+
     public ServiceWrapper(Object serverObj) {
         this.serverObj = serverObj;
+    }
+
+    public ServiceWrapper(Object serverObj, String group) {
+        this.serverObj = serverObj;
+        this.group = group;
     }
 
     public Object getServerObj() {

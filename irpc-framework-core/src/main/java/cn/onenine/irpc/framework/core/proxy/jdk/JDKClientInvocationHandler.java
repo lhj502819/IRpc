@@ -1,5 +1,6 @@
 package cn.onenine.irpc.framework.core.proxy.jdk;
 
+import cn.onenine.irpc.framework.core.client.RpcReferenceWrapper;
 import cn.onenine.irpc.framework.core.common.RpcInvocation;
 import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
@@ -25,13 +26,13 @@ public class JDKClientInvocationHandler implements InvocationHandler {
 
     private final static Object OBJECT = new Object();
 
-    private Class<?> clazz;
+    private RpcReferenceWrapper rpcReferenceWrapper;
 
     private Long timeout ;
 
 
-    public JDKClientInvocationHandler(Class<?> clazz,Long executeTimeout) {
-        this.clazz = clazz;
+    public JDKClientInvocationHandler(RpcReferenceWrapper rpcReferenceWrapper, Long executeTimeout) {
+        this.rpcReferenceWrapper = rpcReferenceWrapper;
         if (executeTimeout == null){
             throw new IllegalArgumentException("executeTimeout must not null and gt 0 ");
         }
@@ -44,9 +45,10 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         RpcInvocation rpcInvocation = new RpcInvocation();
         rpcInvocation.setArgs(args);
         rpcInvocation.setTargetMethod(method.getName());
-        rpcInvocation.setTargetServiceName(clazz.getName());
+        rpcInvocation.setTargetServiceName(rpcReferenceWrapper.getAimClass().getName());
         //这里面注入了一个uuid，对每一次的请求都单独区分
         rpcInvocation.setUuid(UUID.randomUUID().toString());
+        rpcInvocation.setAttachments(rpcReferenceWrapper.getAttatchments());
         RESP_MAP.put(rpcInvocation.getUuid(),OBJECT);
         SEND_QUEUE.add(rpcInvocation);
         long beginTime = System.currentTimeMillis();

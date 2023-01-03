@@ -64,9 +64,10 @@ public class URL {
     public static String buildProviderUrlStr(URL url) {
         String host = url.getParameters().get("host");
         String port = url.getParameters().get("port");
+        String group = url.getParameters().get("group");
         return new String((url.getApplicationName() + ";" +
                 url.getServiceName() + ";" + host + ":" + port + ";" +
-                System.currentTimeMillis()+";100").getBytes(), StandardCharsets.UTF_8);
+                System.currentTimeMillis() + ";100;" + group).getBytes(), StandardCharsets.UTF_8);
     }
 
     /**
@@ -87,13 +88,14 @@ public class URL {
     /**
      * 将某个节点下的信息转换为一个Provider节点对象
      */
-    public static ProviderNodeInfo buildURLFromUrlStr(String providerNodeStr){
-        String[] items = providerNodeStr.split("/");
+    public static ProviderNodeInfo buildURLFromUrlStr(String providerNodeStr) {
+        String[] items = providerNodeStr.split(";");
         ProviderNodeInfo providerNodeInfo = new ProviderNodeInfo();
         providerNodeInfo.setServiceName(items[1]);
         providerNodeInfo.setAddress(items[2]);
         providerNodeInfo.setRegistryTime(items[3]);
         providerNodeInfo.setWeight(Integer.valueOf(items[4]));
+        providerNodeInfo.setGroup(items[5]);
         return providerNodeInfo;
     }
 

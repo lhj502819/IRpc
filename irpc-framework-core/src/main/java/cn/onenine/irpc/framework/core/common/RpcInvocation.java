@@ -1,6 +1,8 @@
 package cn.onenine.irpc.framework.core.common;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 对一次调用的封装
@@ -35,6 +37,19 @@ public class RpcInvocation {
      * 接口响应的数据塞入这个字段中(如果是异步调用或者是void类型，这里就为空)
      */
     private Object response;
+
+    /**
+     * 附加信息
+     */
+    private Map<String, Object> attachments = new ConcurrentHashMap<>();
+
+    public Map<String, Object> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(Map<String, Object> attachments) {
+        this.attachments = attachments;
+    }
 
     public String getTargetMethod() {
         return targetMethod;

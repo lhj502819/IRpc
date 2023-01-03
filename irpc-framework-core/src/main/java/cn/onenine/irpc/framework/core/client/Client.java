@@ -7,7 +7,10 @@ import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
 import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
 import cn.onenine.irpc.framework.core.common.utils.CommonUtils;
-import cn.onenine.irpc.framework.core.config.ClientConfig;
+import cn.onenine.irpc.framework.core.filter.client.ClientFilterChain;
+import cn.onenine.irpc.framework.core.filter.client.ClientLogFilterImpl;
+import cn.onenine.irpc.framework.core.filter.client.DirectInvokeFilterImpl;
+import cn.onenine.irpc.framework.core.filter.client.ClientGroupFilterImpl;
 import cn.onenine.irpc.framework.core.proxy.jdk.JDKProxyFactory;
 import cn.onenine.irpc.framework.core.common.RpcDecoder;
 import cn.onenine.irpc.framework.core.registy.URL;
@@ -49,7 +52,6 @@ public class Client {
 
     public static EventLoopGroup clientGroup = new NioEventLoopGroup();
 
-    private ClientConfig clientConfig;
 
     private AbstractRegister abstractRegister;
 
@@ -61,13 +63,7 @@ public class Client {
         return bootstrap;
     }
 
-    public ClientConfig getClientConfig() {
-        return clientConfig;
-    }
 
-    public void setClientConfig(ClientConfig clientConfig) {
-        this.clientConfig = clientConfig;
-    }
 
     /**
      * 客户端需要通过一个代理工厂获取被调用对象的代理对象，然后通过代理对象将数据放入发送队列
@@ -88,9 +84,9 @@ public class Client {
         iRpcListenerLoader = new IRpcListenerLoader();
         iRpcListenerLoader.init();
 
-        this.clientConfig = PropertiesBootstrap.loadClientConfigFromLocal();
+        CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
         RpcReference rpcReference = null;
-        if ("javassist".equals(clientConfig.getProxyType())) {
+        if ("javassist".equals(CLIENT_CONFIG.getProxyType())) {
 //            rpcReference = new RpcReference(new )
         } else {
             rpcReference = new RpcReference(new JDKProxyFactory());
@@ -100,10 +96,10 @@ public class Client {
 
     public void doSubscribeService(Class serviceBean) {
         if (abstractRegister == null) {
-            abstractRegister = new ZookeeperRegister(clientConfig.getRegisterAddr());
+            abstractRegister = new ZookeeperRegister(CLIENT_CONFIG.getRegisterAddr());
         }
         URL url = new URL();
-        url.setApplicationName(clientConfig.getApplicationName());
+        url.setApplicationName(CLIENT_CONFIG.getApplicationName());
         url.setServiceName(serviceBean.getName());
         url.addParameter("host", CommonUtils.getIpAddress());
         Map<String, String> result = abstractRegister.getServiceWeightMap(serviceBean.getName());
@@ -157,7 +153,7 @@ public class Client {
                     RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
                     //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了ServerHandler
                     RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
-                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());
+                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data);
                     channelFuture.channel().writeAndFlush(rpcProtocol);
                 } catch (Exception e) {
                     LOGGER.error("client call error", e);
@@ -172,8 +168,12 @@ public class Client {
         RpcReference rpcReference = client.initClientApplication();
         //初始化客户端配置，如路由策略
         client.initConfig();
+        RpcReferenceWrapper<DataService> dataServiceRpcReferenceWrapper = new RpcReferenceWrapper<>();
+        dataServiceRpcReferenceWrapper.setAimClass(DataService.class);
+        dataServiceRpcReferenceWrapper.setGroup("test");
+        dataServiceRpcReferenceWrapper.setToken("token-b");
 
-        DataService dataService = rpcReference.get(DataService.class);
+        DataService dataService = rpcReference.get(dataServiceRpcReferenceWrapper);
         client.doSubscribeService(DataService.class);
         ConnectionHandler.setBootstrap(client.getBootstrap());
         //连接所有的Provider
@@ -193,14 +193,14 @@ public class Client {
 
     private void initConfig() {
         //初始化路由策略
-        String routeStrategy = clientConfig.getRouteStrategy();
+        String routeStrategy = CLIENT_CONFIG.getRouteStrategy();
         if (RANDOM_ROUTER_TYPE.equals(routeStrategy)) {
             IROUTER = new RandomRouterImpl();
         } else if (ROTATE_ROUTER_TYPE.equals(routeStrategy)) {
             IROUTER = new RotateRouterImpl();
         }
 
-        String clientSerialize = clientConfig.getClientSerialize();
+        String clientSerialize = CLIENT_CONFIG.getClientSerialize();
         switch (clientSerialize) {
             case JDK_SERIALIZE_TYPE:
                 CLIENT_SERIALIZE_FACTORY = new JdkSerializeFactory();
@@ -217,6 +217,11 @@ public class Client {
             default:
                 throw new RuntimeException("no match serialize type for " + clientSerialize);
         }
-        System.out.println("clientSerialize is " + clientSerialize);
+        //初始化过滤链
+        ClientFilterChain clientFilterChain = new ClientFilterChain();
+        clientFilterChain.addServerFilter(new DirectInvokeFilterImpl());
+        clientFilterChain.addServerFilter(new ClientLogFilterImpl());
+        clientFilterChain.addServerFilter(new ClientGroupFilterImpl());
+        CLIENT_FILTER_CHAIN = clientFilterChain;
     }
 }
