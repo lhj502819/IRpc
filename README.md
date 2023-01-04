@@ -1,461 +1,217 @@
-# IRpc **手写RPC框架第4版-序列化模块设计与实现**
-<a name="tbq7B"></a>
+# IRpc **手写RPC框架第5版-过滤器模块设计与实现**
+<a name="Tr7YJ"></a>
+## 为什么需要过滤器？
+目前整个RPC框架的功能基本已经齐全了，但是在实际的开发过程中我们可能会有如下的需求：
 
-## 为什么需要序列化？
+- 对client的请求做鉴权
+- 对服务进行分组管理
+- 记录请求日志
+- 基于IP的请求直连
 
-计算机底层的传输都是通过字节流的方式进行传输的（byte[]），如果我们的内容（字符串、自定义实体、文件等等）需要传输，则需要把这些内容转换成byte[]，这一过程就是序列化；反过来如果我们想把这些byte[]再转换回目标对象，这一过程就是反序列化。
-<a name="cUpSv"></a>
+首先我们先对这几个需求进行简单解释，只有弄清楚需求的来源才能更好的去理解、设计和实现。
+<a name="bUKJ2"></a>
+### 对client的请求做鉴权
+随着业务的不断发展，服务的种类变得越来越丰富，有些重要的操作可能安全性比较高，需要进行鉴权，因此需要在RPC框架中增加对鉴权的支持。<br />![image.png](https://cdn.nlark.com/yuque/0/2023/png/1171730/1672813394879-00c22166-58f2-4c69-9ee1-914e216bbc61.png#averageHue=%23e6f2ca&clientId=u500908ca-7289-4&crop=0&crop=0&crop=1&crop=1&from=paste&height=324&id=u049f31ca&margin=%5Bobject%20Object%5D&name=image.png&originHeight=405&originWidth=1083&originalType=binary&ratio=1&rotation=0&showTitle=false&size=23186&status=done&style=none&taskId=u295a332f-bdd8-4864-b9f1-736228f9f1c&title=&width=866.4)
+<a name="Dv4Ab"></a>
+### 对服务进行分组管理
+在进行团队协作或者服务升级的时候，可能会遇到需要对Service Provider进行分组，比如分为V1、V2，方便进行流量的划分，当V2版本出现问题时，我们只需要将所有的调用调整为V1即可，同时也可以进行迭代升级，以免出现ALL IN时升级的功能出现问题导致整个系统不可用。.<br />![image.png](https://cdn.nlark.com/yuque/0/2023/png/1171730/1672816758098-6c8cb8e3-26bf-4a99-8ebe-01a2ab25fc13.png#averageHue=%23e6f1ca&clientId=u500908ca-7289-4&crop=0&crop=0&crop=1&crop=1&from=paste&height=329&id=ubc596961&margin=%5Bobject%20Object%5D&name=image.png&originHeight=411&originWidth=1157&originalType=binary&ratio=1&rotation=0&showTitle=false&size=45971&status=done&style=none&taskId=u29c8f5fc-2721-4a62-8916-e858c1b0446&title=&width=925.6)
+<a name="nwRo1"></a>
+### 基于IP的请求直连
+在测试和联调阶段比较常见，例如在服务部署之后，发现两个provider对相同的服务，相同的参数，返回的结果却不同，此时就可以通过指定IP进行直连，方便问题定位。<br />![image.png](https://cdn.nlark.com/yuque/0/2023/png/1171730/1672816841853-cce7fead-a64a-4dad-9a7a-fb82732d49b0.png#averageHue=%23e5f0c9&clientId=u500908ca-7289-4&crop=0&crop=0&crop=1&crop=1&from=paste&height=299&id=u55f6c4f4&margin=%5Bobject%20Object%5D&name=image.png&originHeight=374&originWidth=1202&originalType=binary&ratio=1&rotation=0&showTitle=false&size=53023&status=done&style=none&taskId=u1931aef2-4fc1-4cc5-b72d-224e8b61bcc&title=&width=961.6)
+<a name="Ta6i5"></a>
+### 记录请求日志
+在实际的业务中我们在进行服务调用的时候需要做一些日志埋点，对调用信息进行记录，方便进行问题的排查
 
-## 序列化常见场景
-
-1. 网络传输：比如Dubbo、Redis通讯传输数据等
-2. 磁盘IO传输：比如：本地文件->内存；内存->本地文件
-3. 存储：数据的存储底层都是二进制的方式，因此数据的存取就需要进行序列化
-
-<a name="mPkc4"></a>
-
-## RPC框架中的应用
-
-我们的RPC框架中需要进行网络传输，在实现中，我们自定义了Server和Client的传输协议`RpcProtocol`，并自定义了编解码器`RpcEncoder`和`RpcDecoder`，我们的RPC框架中使用了Netty网络框架，其会自动帮我们将`RpcProtocol`序列化，而在`RpcProtoco`中最重要的是`content`这个字段，我们会将`RpcInvocation`，也就是一次调用相关的内容（参数、调用方法等）都放到这个字段。<br />在`RpcProtocol`中是以`byte[]`格式存储的，因此这里我们需要考虑如何将RpcInvocation对象序列化为byte数组，供Netty进行传输。<br />常见的序列化框架有：JDK、FastJSON、Hessian、Kryo、Protocol Buf，为了兼容各种不同的序列化框架，因此我们在RPC框架中抽离了一层序列化层，专门用于对接市面上常见的序列化技术框架。<br />每种序列化框架的性能各有不同，在使用时还需要根据实际情况自行选择，后续我们会对常见的序列化框架进行性能对比测试。
-<a name="EQAFG"></a>
-
-## 序列化层实现
-
-<a name="VOWLu"></a>
-
-### 抽象工厂
-
+以上的这些处理其实就是一个链条，我们仅需要将这些功能按照顺序插入到整个链条中，并在适当的位置执行整个链条即可，而这些一个个的功能，则类似于我们常见的过滤器一样。
+<a name="FG7cZ"></a>
+## 如何实现？
+过滤器的实现一般都会基于责任链设计模式去设计，在目前比较流行的API网关`SprngCloudGateway`中也有类似的实现。<br />![image.png](https://cdn.nlark.com/yuque/0/2023/png/1171730/1672817458720-ec1d7631-94c5-4c31-8361-50026f5d5ae7.png#averageHue=%232e2d2c&clientId=u500908ca-7289-4&crop=0&crop=0&crop=1&crop=1&from=paste&height=405&id=eIZ2w&margin=%5Bobject%20Object%5D&name=image.png&originHeight=506&originWidth=1033&originalType=binary&ratio=1&rotation=0&showTitle=false&size=66900&status=done&style=none&taskId=ufc9c77c5-86f3-4a56-9d4c-286d83abcd4&title=&width=826.4)<br />我曾经对SCG的2.2.6版本源码进行过解析，感兴趣的小伙伴可前往查看，地址：[https://www.yuque.com/lihongjian/gui608](https://www.yuque.com/lihongjian/gui608)<br />在我们的RPC框架中也采用类似的方式，只不过进行了简单的变形。我们首先定义了过滤器标记接口：`IFilter`
 ```java
-public interface SerializeFactory {
-    /**
-     * 序列化
-     */
-    <T> byte[] serialize(T t);
-    /**
-     * 反序列化
-     */
-    <T> T deserialize(byte[] data, Class<T> clazz);
+public interface IFilter {
+}
+
+```
+由于我们的过滤器分为Client和Server两端使用的，因此分别抽象出`IClinetFilter`和`IServerFilter`。
+```java
+public interface IServerFilter extends IFilter {
+
+    void doFilter(RpcInvocation rpcInvocation);
+
+}
+
+public interface IClientFilter extends IFilter {
+
+    void doFilter(List<ChannelFutureWrapper> src, RpcInvocation rpcInvocation);
+
 }
 ```
-
-<a name="N4tLt"></a>
-
-### Kroy序列化
-
+<a name="uVIxa"></a>
+### 服务分组过滤器
+在Client发起调用时，我们将**分组信息**存储到了`attachements`中，是一个Map结构。
 ```java
-public class KryoSerializeFactory<T> implements SerializeFactory {
-    /**
-     * 由于 Kryo 不是线程安全的，并且构建和配置 Kryo 实例的成本相对较高，因此在多线程环境中可能会考虑使用 ThreadLocal 或池化。
-     *
-     * 具体可查看Github wiki：https://github.com/EsotericSoftware/kryo#input
-     */
-    static private final ThreadLocal<Kryo> kryos = new ThreadLocal<Kryo>() {
-        @Override
-        protected Kryo initialValue() {
-            Kryo kryo = new Kryo();
-            // Configure the Kryo instance.
-            return kryo;
-        };
-    };
+public class ClientGroupFilterImpl implements IClientFilter{
+
     @Override
-    public <T> byte[] serialize(T t) {
-        Output output = null;
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            output = new Output(byteArrayOutputStream);
-            Kryo kryo = kryos.get();
-            kryo.register(t.getClass());
-            kryo.writeClassAndObject(output, t);
-            return output.toBytes();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (output != null) {
-                output.close();
+    public void doFilter(List<ChannelFutureWrapper> src, RpcInvocation rpcInvocation) {
+        String group = (String) rpcInvocation.getAttachments().get("group");
+        if (StrUtil.isBlank(group)){
+            return;
+        }
+        Iterator<ChannelFutureWrapper> iterator = src.iterator();
+        while (iterator.hasNext()) {
+            ChannelFutureWrapper channelFutureWrapper = iterator.next();
+            if (!channelFutureWrapper.getGroup().equals(group)){
+                iterator.remove();
             }
         }
+        if (CollectionUtil.isEmpty(src)){
+            throw new RuntimeException("no provider match for group " + group);
+        }
+
     }
+}
+```
+<a name="m4C5f"></a>
+### IP直连过滤器
+与“服务分组过滤器”一样，Client会在发起调用时将请求的ip存储到attachments中。
+```java
+public class DirectInvokeFilterImpl implements IClientFilter {
     @Override
-    public <T> T deserialize(byte[] data, Class<T> clazz) {
-        Input input = null;
-        try {
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
-            input = new Input(byteArrayInputStream);
-            Kryo kryo = kryos.get();
-            return kryo.readObject(input, clazz);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (input != null) {
-                input.close();
+    public void doFilter(List<ChannelFutureWrapper> src, RpcInvocation rpcInvocation) {
+        String url = (String) rpcInvocation.getAttachments().get("url");
+        if (StrUtil.isBlank(url)) {
+            return;
+        }
+
+        Iterator<ChannelFutureWrapper> iterator = src.iterator();
+        while (iterator.hasNext()) {
+            ChannelFutureWrapper channelFutureWrapper = iterator.next();
+            if (!(channelFutureWrapper.getHost() + ":" + channelFutureWrapper.getPort()).equals(url)) {
+                iterator.remove();
             }
-        }
-    }
-}
-```
-
-<a name="TicVS"></a>
-
-### JDK序列化
-
-```java
-public class JdkSerializeFactory implements SerializeFactory {
-    @Override
-    public <T> byte[] serialize(T t) {
-        byte[] data = null;
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            ObjectOutputStream output = new ObjectOutputStream(os);
-            output.writeObject(t);
-            output.flush();
-            output.close();
-            data = os.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException("JdkSerializeFactory serialize error" ,e);
-        }
-        return data;
-    }
-    @Override
-    public <T> T deserialize(byte[] data, Class<T> clazz) {
-        ByteArrayInputStream is = new ByteArrayInputStream(data);
-        try {
-            ObjectInputStream input = new ObjectInputStream(is);
-            Object result = input.readObject();
-            return (T) result;
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException("JdkSerializeFactory deSerialize error" ,e);
-        }
-    }
-}
-```
-
-<a name="ZyxDj"></a>
-
-### Hessian序列化
-
-```java
-public class HessianSerializeFactory implements SerializeFactory {
-    @Override
-    public <T> byte[] serialize(T t) {
-        byte[] data = null;
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            Hessian2Output output = new Hessian2Output(os);
-            output.writeObject(t);
-            output.getBytesOutputStream().flush();
-            output.completeMessage();
-            output.close();
-            data = os.toByteArray();
-        } catch (Exception e) {
-            throw new RuntimeException("HessianSerializeFactory serialize error", e);
-        }
-        return data;
-    }
-    @Override
-    public <T> T deserialize(byte[] data, Class<T> clazz) {
-        if (data == null) {
-            return null;
-        }
-        Object result = null;
-        try {
-            ByteArrayInputStream is = new ByteArrayInputStream(data);
-            Hessian2Input input = new Hessian2Input(is);
-            result = input.readObject();
-        } catch (Exception e) {
-            throw new RuntimeException("HessianSerializeFactory deSerialize error", e);
-        }
-        return (T) result;
-    }
-}
-```
-
-<a name="yBKCz"></a>
-
-### FastJSON序列化
-
-```java
-public class FastJsonSerializeFactory implements SerializeFactory {
-    @Override
-    public <T> byte[] serialize(T t) {
-        return JSONObject.toJSONString(t).getBytes();
-    }
-    @Override
-    public <T> T deserialize(byte[] data, Class<T> clazz) {
-        return JSONObject.parseObject(new String(data), clazz);
-    }
-}
-```
-
-<a name="VMmDB"></a>
-
-### 性能测试
-
-<a name="fY9Hx"></a>
-
-#### 序列化后码流大小
-
-我们通过对一个简单的POJO进行序列化测试
-
-```java
-public class SerializeByteSizeCompareTest {
-
-    private static User buildUserDefault() {
-        User user = new User();
-        user.setAge(11);
-        user.setAddress("北京市昌平区");
-        user.setBankNo(1215464648L);
-        user.setSex(1);
-        user.setId(155555);
-        user.setIdCardNo("440308781129381222");
-        user.setRemark("备注信息字段");
-        user.setUsername("502819");
-        return user;
-    }
-
-    public void jdkSerializeSizeTest(){
-        SerializeFactory serializeFactory = new JdkSerializeFactory();
-        User user = buildUserDefault();
-        byte[] result = serializeFactory.serialize(user);
-        System.out.println("jdk serialize size is " + result.length);
-    }
-    public void hessianSerializeSizeTest(){
-        SerializeFactory serializeFactory = new HessianSerializeFactory();
-        User user = buildUserDefault();
-        byte[] result = serializeFactory.serialize(user);
-        System.out.println("hessian serialize size is " + result.length);
-    }
-    public void kroySerializeSizeTest(){
-        SerializeFactory serializeFactory = new KryoSerializeFactory();
-        User user = buildUserDefault();
-        byte[] result = serializeFactory.serialize(user);
-        System.out.println("kroy serialize size is " + result.length);
-    }
-
-    public void fastJsonSerializeSizeTest(){
-        SerializeFactory serializeFactory = new FastJsonSerializeFactory();
-        User user = buildUserDefault();
-        byte[] result = serializeFactory.serialize(user);
-        System.out.println("fastJson serialize size is " + result.length);
-    }
-
-    public static void main(String[] args) {
-        SerializeByteSizeCompareTest serializeByteSizeCompareTest = new SerializeByteSizeCompareTest();
-        serializeByteSizeCompareTest.jdkSerializeSizeTest();
-        serializeByteSizeCompareTest.hessianSerializeSizeTest();
-        serializeByteSizeCompareTest.fastJsonSerializeSizeTest();
-        serializeByteSizeCompareTest.kroySerializeSizeTest();
-    }
-
-
-}
-```
-
-测试结果如下，可见JDK序列化后的码流最大，kroy的码流最小：
-
-```java
-jdk serialize size is 448
-hessian serialize size is 180
-fastJson serialize size is 163
-kroy serialize size is 78
-```
-
-<a name="TRXUk"></a>
-
-#### 序列化速度
-
-我们使用JMH来进行相关的测试。<br />JMH（Java Microbenchmark Harness）是用于代码微基准测试的工具套件，主要是基于方法层面的基准测试，精度可以达到纳秒级。该工具是由 Oracle 内部实现 JIT 的大牛们编写的，他们应该比任何人都了解 JIT 以及 JVM 对于基准测试的影响。<br />相关依赖：
-
-```xml
-<dependency>
-  <groupId>org.openjdk.jmh</groupId>
-  <artifactId>jmh-core</artifactId>
-  <version>1.21</version>
-</dependency>
-<dependency>
-  <groupId>org.openjdk.jmh</groupId>
-  <artifactId>jmh-generator-annprocess</artifactId>
-  <version>1.21</version>
-  <scope>provided</scope>
-</dependency>
-```
-
-测试代码：
-
-```java
-public class SerializeCompareTest {
-
-    private static User buildUserDefault(){
-        User user = new User();
-        user.setAge(11);
-        user.setAddress("北京市昌平区");
-        user.setBankNo(1215464648L);
-        user.setSex(1);
-        user.setId(155555);
-        user.setIdCardNo("440308781129381222");
-        user.setRemark("备注信息字段");
-        user.setUsername("502819");
-        return user;
-    }
-
-    @Benchmark
-    public void jdkSerializeTest(){
-        SerializeFactory serializeFactory = new JdkSerializeFactory();
-        User user = buildUserDefault();
-        byte[] result = serializeFactory.serialize(user);
-        User deserializeUser = serializeFactory.deserialize(result,User.class);
-    }
-
-    @Benchmark
-    public void hessianSerializeTest(){
-        SerializeFactory serializeFactory = new HessianSerializeFactory();
-        User user = buildUserDefault();
-        byte[] result = serializeFactory.serialize(user);
-        User deserializeUser = serializeFactory.deserialize(result,User.class);
-    }
-
-    @Benchmark
-    public void fastJsonSerializeTest(){
-        SerializeFactory serializeFactory = new FastJsonSerializeFactory();
-        User user = buildUserDefault();
-        byte[] result = serializeFactory.serialize(user);
-        User deserializeUser = serializeFactory.deserialize(result,User.class);
-    }
-
-    @Benchmark
-    public void kryoSerializeTest(){
-        SerializeFactory serializeFactory = new KryoSerializeFactory();
-        User user = buildUserDefault();
-        byte[] result = serializeFactory.serialize(user);
-        User deserializeUser = serializeFactory.deserialize(result,User.class);
-    }
-
-    public static void main(String[] args) throws RunnerException {
-        //配置进行2轮热数 测试2轮 1个线程
-        //预热的原因 是JVM在代码执行多次会有优化
-        Options options = new OptionsBuilder().warmupIterations(2).measurementBatchSize(2)
-                .forks(1).build();
-        new Runner(options).run();
-    }
-}
-```
-
-```java
-Benchmark                                    Mode  Cnt       Score       Error  Units
-SerializeCompareTest.fastJsonSerializeTest  thrpt    5  394505.209 ± 30504.962  ops/s
-SerializeCompareTest.hessianSerializeTest   thrpt    5  131266.505 ± 18162.446  ops/s
-SerializeCompareTest.jdkSerializeTest       thrpt    5   27091.395 ±   901.560  ops/s
-SerializeCompareTest.kryoSerializeTest      thrpt    5  362255.747 ±  3446.206  ops/s
-```
-
-从结果上看来，FastJSON的序列化吞吐量最好的，JDK还是最差的。
-<a name="TeQtx"></a>
-
-## RPC框架整合
-
-<a name="bHhb5"></a>
-
-### 配置化序列化方式
-
-```properties
-#provider端口
-irpc.serverPort=8098
-#注册中心地址
-irpc.registerAddr=localhost:2181
-#provider 应用名称
-irpc.applicationName=irpc-provider
-#代理方式
-irpc.proxyType=jdk
-#调用超时时间
-irpc.call.timeout=30000
-#provider ip 路由策略
-irpc.routerStrategy=rotate
-#序列化方式
-irpc.serverSerialize=fastJson
-irpc.clientSerialize=fastJson
-```
-
-**需要整合的点：**
-<a name="ya84R"></a>
-
-### Client调用时
-
-```java
-class AsyncSendJob implements Runnable {
-    public AsyncSendJob() {
-    }
-    @Override
-    public void run() {
-        while (true) {
-            try {
-                //阻塞模式
-                RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
-                //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了ServerHandler
-                RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
-                ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data.getTargetServiceName());
-                channelFuture.channel().writeAndFlush(rpcProtocol);
-            } catch (Exception e) {
-                LOGGER.error("client call error", e);
+            if (CollectionUtil.isEmpty(src)) {
+                throw new RuntimeException("no match for url:" + url);
             }
         }
     }
 }
 ```
-
-<a name="fyATi"></a>
-
-### Client接收到Server响应后
-
+<a name="WP4Bx"></a>
+### Token校验过滤器
+Client发起调用时会将token放入`attachments`中，Server端在过滤器中会拿到本次请求的token和内存中对应服务的token进行比对。
 ```java
-public class ClientHandler extends ChannelInboundHandlerAdapter {
+public class ServerTokenFilterImpl implements IServerFilter {
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        RpcProtocol rpcProtocol = (RpcProtocol) msg;
-        byte[] reqContent = rpcProtocol.getContent();
-        RpcInvocation rpcInvocation = CLIENT_SERIALIZE_FACTORY.deserialize(reqContent, RpcInvocation.class);
-        //通过之前发送的uuid来注入匹配的响应数值
-        if (!RESP_MAP.containsKey(rpcInvocation.getUuid())){
-            throw new IllegalArgumentException("server response is error");
+    public void doFilter(RpcInvocation rpcInvocation) {
+        String token = (String) rpcInvocation.getAttachments().get("token");
+        ServiceWrapper serviceWrapper = PROVIDER_SERVICE_WRAPPER_MAP.get(rpcInvocation.getTargetServiceName());
+        if (serviceWrapper == null) {
+            return;
         }
-        //将请求的响应结构放入一个Map集合中，集合的key就是uuid，这个uuid在发送请求之前就已经初始化好了
-        //所以只需要起一个线程在后台遍历这个map，查看对应的key是否有响应即可
-        //uuid放入map的操作被封装到了代理类中进行实现
-        RESP_MAP.put(rpcInvocation.getUuid(),rpcInvocation);
-        ReferenceCountUtil.release(msg);
+        String matchToken = serviceWrapper.getServiceToken();
+        if (StrUtil.isBlank(matchToken)) {
+            return;
+        }
+        if (StrUtil.isNotBlank(token) && matchToken.equals(token)) {
+            return;
+        }
+
+        throw new RuntimeException("token is " + token + " verify result is false!");
+
     }
 }
 ```
+<a name="Ma7EX"></a>
+### 过滤器链FilterChain
+过滤器链主要是负责将所有的过滤器按照一定顺序串起来。与过滤器类似，过滤器链也需要分为Client和Server端。
+<a name="JXR7N"></a>
+#### ServerFilterChain
+```java
+public class ServerFilterChain {
 
-<a name="NwDvD"></a>
+    private static List<IServerFilter> iServerFilters = new ArrayList<>();
 
-### Server端接收到Client的请求和返回响应时
+    public void addServerFilter(IServerFilter serverFilter){
+        iServerFilters.add(serverFilter);
+    }
 
+    public void doFilter(RpcInvocation rpcInvocation){
+        for (IServerFilter iServerFilter : iServerFilters) {
+            iServerFilter.doFilter(rpcInvocation);
+        }
+    }
+
+}
+```
+<a name="Ns2Og"></a>
+#### ClientFilterChain
+```java
+public class ClientFilterChain {
+
+    private static List<IClientFilter> iClientFilters = new ArrayList<>();
+
+    public void addServerFilter(IClientFilter clientFilter) {
+        iClientFilters.add(clientFilter);
+    }
+
+    public void doFilter(List<ChannelFutureWrapper> src, RpcInvocation rpcInvocation) {
+        for (IClientFilter iClientFilter : iClientFilters) {
+            iClientFilter.doFilter(src, rpcInvocation);
+        }
+    }
+
+}
+```
+
+<a name="naqJl"></a>
+## RPC框架接入
+<a name="vaEsE"></a>
+### Client端接入
+由于像服务分组过滤器、IP直连过滤器都需要根据指定的规则选择出对应的Provider，因此我们将执行过滤链条的逻辑插入在`cn.onenine.irpc.framework.core.client.ConnectionHandler#getChannelFuture`中。
+```java
+/**
+ * 默认走随机策略获取ChannelFuture
+ */
+public static ChannelFuture getChannelFuture(RpcInvocation rpcInvocation) {
+    ChannelFutureWrapper[] channelFutureWrappers = SERVICE_ROUTER_MAP.get(rpcInvocation.getTargetServiceName());
+    if (channelFutureWrappers == null || channelFutureWrappers.length == 0) {
+        throw new RuntimeException("no provider exist for " + rpcInvocation.getTargetServiceName());
+    }
+    //doFilter
+    CLIENT_FILTER_CHAIN.doFilter(Lists.newArrayList(channelFutureWrappers), rpcInvocation);
+    Selector selector = new Selector();
+    selector.setProviderServiceName(rpcInvocation.getTargetServiceName());
+    selector.setChannelFutureWrappers(channelFutureWrappers);
+    //通过指定的路由算法选择一个Provider ChannelFuture
+    return IROUTER.select(selector).getChannelFuture();
+}
+```
+<a name="uaCut"></a>
+### Server端接入
+在初始化时按照指定顺序将所有的Filter插入到FilterChain中，在接收到请求后执行整个链条即可，也就是`ChannelInboundHandlerAdapter#channelRead`。
 ```java
 public class ServerHandler extends ChannelInboundHandlerAdapter {
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         //服务端接收数据的时候以RpcProtocol协议的格式接收
         RpcProtocol rpcProtocol = (RpcProtocol) msg;
         RpcInvocation rpcInvocation = SERVER_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(),RpcInvocation.class);
-        //这里的PROVIDER_CLASS_MAP就是一开始预先在启动的时候存储的Bean集合
-        Object aimObject = PROVIDER_CLASS_MAP.get(rpcInvocation.getTargetServiceName());
-        Method[] methods = aimObject.getClass().getMethods();
-        Object result = null;
-        for (Method method : methods) {
-            if (method.getName().equals(rpcInvocation.getTargetMethod())){
-                if (method.getReturnType().equals(Void.TYPE)){
-                    method.invoke(aimObject,rpcInvocation.getArgs());
-                }else {
-                    result = method.invoke(aimObject,rpcInvocation.getArgs());
-                }
-                break;
-            }
-        }
+
+        //doFilter
+        SERVER_FILTER_CHAIN.doFilter(rpcInvocation);
+        
+    	//省略部分代码......
         rpcInvocation.setResponse(result);
         RpcProtocol respRpcProtocol = new RpcProtocol(SERVER_SERIALIZE_FACTORY.serialize(rpcInvocation));
         ctx.writeAndFlush(respRpcProtocol);
     }
+
 }
 ```
+<a name="h006L"></a>
+## 总结
+本版本我们基于责任链模式完成了对RPC框架中流程化功能的整合，这些零零散散的功能我们通过过滤器的方式进行了实现，比如服务的分组选择、IP直连、Token统一校验等，减少了各个模块间的耦合性，如果需要补充新的过滤器，只需要实现Client或者Server对应的接口即可。
 
 
 
