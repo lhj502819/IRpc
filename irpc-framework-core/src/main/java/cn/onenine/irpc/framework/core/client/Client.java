@@ -7,21 +7,22 @@ import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
 import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
 import cn.onenine.irpc.framework.core.common.utils.CommonUtils;
-import cn.onenine.irpc.framework.core.filter.client.ClientFilterChain;
-import cn.onenine.irpc.framework.core.filter.client.ClientLogFilterImpl;
-import cn.onenine.irpc.framework.core.filter.client.DirectInvokeFilterImpl;
-import cn.onenine.irpc.framework.core.filter.client.ClientGroupFilterImpl;
+import cn.onenine.irpc.framework.core.filter.client.*;
 import cn.onenine.irpc.framework.core.proxy.jdk.JDKProxyFactory;
 import cn.onenine.irpc.framework.core.common.RpcDecoder;
+import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.registy.zookeeper.AbstractRegister;
 import cn.onenine.irpc.framework.core.registy.zookeeper.ZookeeperRegister;
+import cn.onenine.irpc.framework.core.router.IRouter;
 import cn.onenine.irpc.framework.core.router.RandomRouterImpl;
 import cn.onenine.irpc.framework.core.router.RotateRouterImpl;
+import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
 import cn.onenine.irpc.framework.core.serialize.fastjson.FastJsonSerializeFactory;
 import cn.onenine.irpc.framework.core.serialize.hessian.HessianSerializeFactory;
 import cn.onenine.irpc.framework.core.serialize.jdk.JdkSerializeFactory;
 import cn.onenine.irpc.framework.core.serialize.kroy.KryoSerializeFactory;
+import cn.onenine.irpc.framework.core.spi.jdk.ExtensionLoader;
 import cn.onenine.irpc.framework.interfaces.DataService;
 import com.alibaba.fastjson2.JSONObject;
 import io.netty.bootstrap.Bootstrap;
@@ -34,12 +35,15 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.*;
 import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.*;
 import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.KRYO_SERIALIZE_TYPE;
+import static cn.onenine.irpc.framework.core.spi.jdk.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
  * @author li.hongjian
@@ -62,7 +66,6 @@ public class Client {
     public Bootstrap getBootstrap() {
         return bootstrap;
     }
-
 
 
     /**
@@ -96,7 +99,16 @@ public class Client {
 
     public void doSubscribeService(Class serviceBean) {
         if (abstractRegister == null) {
-            abstractRegister = new ZookeeperRegister(CLIENT_CONFIG.getRegisterAddr());
+            try {
+                //使用自定义的SPI机制加载配置
+                EXTENSION_LOADER.loadExtension(RegistryService.class);
+                LinkedHashMap<String, Class> registerClassMap = EXTENSION_LOADER_CLASS_CACHE.get(RegistryService.class.getName());
+                Class registerClass = registerClassMap.get(CLIENT_CONFIG.getRegisterType());
+                //实例化SPI对象
+                abstractRegister = (AbstractRegister) registerClass.newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("registryServiceType unKnow, error is ", e);
+            }
         }
         URL url = new URL();
         url.setApplicationName(CLIENT_CONFIG.getApplicationName());
@@ -171,7 +183,7 @@ public class Client {
         RpcReferenceWrapper<DataService> dataServiceRpcReferenceWrapper = new RpcReferenceWrapper<>();
         dataServiceRpcReferenceWrapper.setAimClass(DataService.class);
         dataServiceRpcReferenceWrapper.setGroup("test");
-        dataServiceRpcReferenceWrapper.setToken("token-b");
+        dataServiceRpcReferenceWrapper.setToken("token-a");
 
         DataService dataService = rpcReference.get(dataServiceRpcReferenceWrapper);
         client.doSubscribeService(DataService.class);
@@ -191,37 +203,38 @@ public class Client {
 
     }
 
-    private void initConfig() {
+    private void initConfig() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         //初始化路由策略
+        EXTENSION_LOADER.loadExtension(IRouter.class);
         String routeStrategy = CLIENT_CONFIG.getRouteStrategy();
-        if (RANDOM_ROUTER_TYPE.equals(routeStrategy)) {
-            IROUTER = new RandomRouterImpl();
-        } else if (ROTATE_ROUTER_TYPE.equals(routeStrategy)) {
-            IROUTER = new RotateRouterImpl();
+        LinkedHashMap<String, Class> iRouterMap = EXTENSION_LOADER_CLASS_CACHE.get(IRouter.class.getName());
+        Class iRouterClass = iRouterMap.get(routeStrategy);
+        if (iRouterClass == null) {
+            throw new RuntimeException("no match routerStrategy for " + routeStrategy);
         }
+        IROUTER = (IRouter) iRouterClass.newInstance();
 
-        String clientSerialize = CLIENT_CONFIG.getClientSerialize();
-        switch (clientSerialize) {
-            case JDK_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new JdkSerializeFactory();
-                break;
-            case HESSIAN2_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new HessianSerializeFactory();
-                break;
-            case FAST_JSON_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
-                break;
-            case KRYO_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new KryoSerializeFactory();
-                break;
-            default:
-                throw new RuntimeException("no match serialize type for " + clientSerialize);
+        //初始化序列化方式
+        EXTENSION_LOADER.loadExtension(SerializeFactory.class);
+        String serializeType = CLIENT_CONFIG.getClientSerialize();
+        LinkedHashMap<String, Class> serializeTypeMap = EXTENSION_LOADER_CLASS_CACHE.get(SerializeFactory.class.getName());
+        Class serializeClass = serializeTypeMap.get(serializeType);
+        if (serializeClass == null) {
+            throw new RuntimeException("no match serialize type for " + serializeType);
         }
+        CLIENT_SERIALIZE_FACTORY = (SerializeFactory) serializeClass.newInstance();
+
         //初始化过滤链
+        EXTENSION_LOADER.loadExtension(IClientFilter.class);
         ClientFilterChain clientFilterChain = new ClientFilterChain();
-        clientFilterChain.addServerFilter(new DirectInvokeFilterImpl());
-        clientFilterChain.addServerFilter(new ClientLogFilterImpl());
-        clientFilterChain.addServerFilter(new ClientGroupFilterImpl());
+        LinkedHashMap<String, Class> filterMap = EXTENSION_LOADER_CLASS_CACHE.get(IClientFilter.class.getName());
+        for (String implClassName : filterMap.keySet()) {
+            Class filterClass = filterMap.get(implClassName);
+            if (filterClass == null) {
+                throw new NullPointerException("no match client filter for " + implClassName);
+            }
+            clientFilterChain.addServerFilter((IClientFilter) filterClass.newInstance());
+        }
         CLIENT_FILTER_CHAIN = clientFilterChain;
     }
 }

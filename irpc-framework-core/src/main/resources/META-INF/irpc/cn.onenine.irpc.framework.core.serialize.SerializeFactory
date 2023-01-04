@@ -1,0 +1,4 @@
+fastJson=cn.onenine.irpc.framework.core.serialize.fastjson.FastJsonSerializeFactory
+hessian=cn.onenine.irpc.framework.core.serialize.hessian.HessianSerializeFactory
+jdk=cn.onenine.irpc.framework.core.serialize.jdk.JdkSerializeFactory
+kroy=cn.onenine.irpc.framework.core.serialize.kroy.KryoSerializeFactory

@@ -1,0 +1,2 @@
+random=cn.onenine.irpc.framework.core.router.RandomRouterImpl
+rotate=cn.onenine.irpc.framework.core.router.RotateRouterImpl

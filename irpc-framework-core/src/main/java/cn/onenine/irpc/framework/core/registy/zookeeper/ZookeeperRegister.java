@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.CLIENT_CONFIG;
+import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.SERVER_CONFIG;
+
 /**
  * Description：负责对Zookeeper完成服务注册、服务订阅、服务下线等相关实际操作
  *
@@ -36,6 +39,12 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
 
     public ZookeeperRegister(String address) {
         this.zkClient = new CuratorZookeeperClient(address);
+    }
+
+    public ZookeeperRegister() {
+        //看哪个配置不为空
+        String registryAddr = CLIENT_CONFIG!= null ? CLIENT_CONFIG.getRegisterAddr() : SERVER_CONFIG.getRegisterAddr();
+        this.zkClient = new CuratorZookeeperClient(registryAddr);
     }
 
     @Override

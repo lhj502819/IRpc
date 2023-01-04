@@ -1,0 +1,2 @@
+logger=cn.onenine.irpc.framework.core.filter.server.ServerLogFilterImpl
+token=cn.onenine.irpc.framework.core.filter.server.ServerTokenFilterImpl

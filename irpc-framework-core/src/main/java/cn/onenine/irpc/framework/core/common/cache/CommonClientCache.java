@@ -8,6 +8,7 @@ import cn.onenine.irpc.framework.core.filter.client.ClientFilterChain;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.router.IRouter;
 import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
+import cn.onenine.irpc.framework.core.spi.jdk.ExtensionLoader;
 
 import java.util.HashSet;
 import java.util.List;
@@ -70,5 +71,10 @@ public class CommonClientCache {
      * 客户端配置
      */
     public static ClientConfig CLIENT_CONFIG;
+
+    /**
+     * SPI
+     */
+    public static ExtensionLoader EXTENSION_LOADER = new ExtensionLoader();
 
 }

@@ -32,6 +32,8 @@ public class PropertiesBootstrap {
 
     public static final String CLIENT_SERIALIZE_TYPE="irpc.clientSerialize";
 
+    public static final String REGISTER_TYPE = "irpc.registerType";
+
     public static ServerConfig loadServerConfigFromLocal(){
         try {
             PropertiesLoader.loadConfiguration();;
@@ -44,6 +46,7 @@ public class PropertiesBootstrap {
         serverConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
         serverConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
         serverConfig.setServerSerialize(PropertiesLoader.getPropertiesStr(SERVER_SERIALIZE_TYPE));
+        serverConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
         return serverConfig;
     }
 
@@ -61,6 +64,7 @@ public class PropertiesBootstrap {
         clientConfig.setCallTimeout(Long.parseLong(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT))));
         clientConfig.setRouteStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
         clientConfig.setClientSerialize(PropertiesLoader.getPropertiesStr(CLIENT_SERIALIZE_TYPE));
+        clientConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
         return clientConfig;
     }
 }

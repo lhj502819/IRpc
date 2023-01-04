@@ -1,0 +1,3 @@
+group=cn.onenine.irpc.framework.core.filter.client.ClientGroupFilterImpl
+logger=cn.onenine.irpc.framework.core.filter.client.ClientLogFilterImpl
+directInvoke=cn.onenine.irpc.framework.core.filter.client.DirectInvokeFilterImpl

@@ -114,7 +114,7 @@ public class ConnectionHandler {
         Selector selector = new Selector();
         selector.setProviderServiceName(rpcInvocation.getTargetServiceName());
         ChannelFutureWrapper[] channelFutureWrappersArrCopy = new ChannelFutureWrapper[channelFutureWrappersCopy.size()];
-        selector.setChannelFutureWrappers(channelFutureWrappersArrCopy);
+        selector.setChannelFutureWrappers(channelFutureWrappersCopy.toArray(channelFutureWrappersArrCopy));
         //通过指定的路由算法选择一个Provider ChannelFuture
         return IROUTER.select(selector).getChannelFuture();
     }

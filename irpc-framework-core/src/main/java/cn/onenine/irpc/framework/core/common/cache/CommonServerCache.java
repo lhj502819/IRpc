@@ -1,10 +1,12 @@
 package cn.onenine.irpc.framework.core.common.cache;
 
+import cn.onenine.irpc.framework.core.config.ServerConfig;
 import cn.onenine.irpc.framework.core.filter.server.ServerFilterChain;
 import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
 import cn.onenine.irpc.framework.core.server.ServiceWrapper;
+import cn.onenine.irpc.framework.core.spi.jdk.ExtensionLoader;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,5 +40,13 @@ public class CommonServerCache {
      * key：serviceName value：ServiceWrapper
      */
     public static Map<String, ServiceWrapper> PROVIDER_SERVICE_WRAPPER_MAP = new HashMap<>();
+
+    /**
+     * SPI
+     */
+    public static ExtensionLoader EXTENSION_LOADER = new ExtensionLoader();
+
+    public static ServerConfig SERVER_CONFIG;
+
 
 }

@@ -20,6 +20,19 @@ public class ServerConfig {
      */
     private String serverSerialize;
 
+    /**
+     * 注册中心类型
+     */
+    private String registerType;
+
+    public String getRegisterType() {
+        return registerType;
+    }
+
+    public void setRegisterType(String registerType) {
+        this.registerType = registerType;
+    }
+
     public String getServerSerialize() {
         return serverSerialize;
     }
