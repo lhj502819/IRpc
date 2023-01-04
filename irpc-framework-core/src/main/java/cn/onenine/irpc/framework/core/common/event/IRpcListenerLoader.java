@@ -2,6 +2,8 @@ package cn.onenine.irpc.framework.core.common.event;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.onenine.irpc.framework.core.common.event.listener.IRpcListener;
+import cn.onenine.irpc.framework.core.common.event.listener.ProviderNodeDataChangeListener;
+import cn.onenine.irpc.framework.core.common.event.listener.ServiceDestroyListener;
 import cn.onenine.irpc.framework.core.common.event.listener.ServiceUpdateListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,8 @@ public class IRpcListenerLoader {
 
     public void init() {
         registerListener(new ServiceUpdateListener());
+        registerListener(new ServiceDestroyListener());
+        registerListener(new ProviderNodeDataChangeListener());
     }
 
     /**
@@ -68,6 +72,27 @@ public class IRpcListenerLoader {
                         logger.error("sendEvent error", e);
                     }
                 });
+            }
+        }
+    }
+
+
+
+    public static void sendSyncEvent(final IRpcEvent iRpcEvent) {
+        if (CollectionUtil.isEmpty(iRpcListeners)) {
+            return;
+        }
+
+        for (final IRpcListener iRpcListener : iRpcListeners) {
+            //判断Class的泛型
+            Class<?> type = getInterfaceT(iRpcListener);
+            if (type.equals(iRpcEvent.getClass())) {
+                //是当前listener监听的事件类型
+                try {
+                    iRpcListener.callBack(iRpcEvent.getData());
+                } catch (Exception e) {
+                    logger.error("sendEvent error", e);
+                }
             }
         }
     }

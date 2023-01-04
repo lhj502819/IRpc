@@ -2,6 +2,9 @@ package cn.onenine.irpc.framework.core.client;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.onenine.irpc.framework.core.common.ChannelFutureWrapper;
+import cn.onenine.irpc.framework.core.registy.URL;
+import cn.onenine.irpc.framework.core.registy.zookeeper.ProviderNodeInfo;
+import cn.onenine.irpc.framework.core.router.Selector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 
@@ -9,8 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.CONNECT_MAP;
-import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.SERVER_ADDRESS;
+import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.*;
 
 /**
  * Description：将连接的建立、断开、按照服务名筛选等功能都封装在了一起，
@@ -35,19 +37,19 @@ public class ConnectionHandler {
     /**
      * 构建单个连接通道，元操作
      * @param providerServiceName
-     * @param providerIp
+     * @param providerIpAndPort
      * @throws InterruptedException
      */
-    public static void connect(String providerServiceName,String providerIp) throws InterruptedException{
+    public static void connect(String providerServiceName,String providerIpAndPort) throws InterruptedException{
         if (bootstrap == null){
             throw new RuntimeException("bootstrap can not be null");
         }
 
         //格式错误类型的信息
-        if (!providerIp.contains(":")){
+        if (!providerIpAndPort.contains(":")){
             return;
         }
-        String[] providerAddress = providerIp.split(":");
+        String[] providerAddress = providerIpAndPort.split(":");
         String ip = providerAddress[0];
         int port = Integer.parseInt(providerAddress[1]);
         ChannelFuture channelFuture = bootstrap.connect(ip, port).sync();
@@ -55,7 +57,10 @@ public class ConnectionHandler {
         channelFutureWrapper.setChannelFuture(channelFuture);
         channelFutureWrapper.setHost(ip);
         channelFutureWrapper.setPort(port);
-        SERVER_ADDRESS.add(providerIp);
+        String providerUrlInfo = URL_MAP.get(providerServiceName).get(providerIpAndPort);
+        ProviderNodeInfo providerNodeInfo = URL.buildURLFromUrlStr(providerUrlInfo);
+        channelFutureWrapper.setWeight(providerNodeInfo.getWeight());
+        SERVER_ADDRESS.add(providerIpAndPort);
         List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(providerServiceName);
         if (CollectionUtil.isEmpty(channelFutureWrappers)){
             channelFutureWrappers = new ArrayList<>();
@@ -63,6 +68,9 @@ public class ConnectionHandler {
 
         channelFutureWrappers.add(channelFutureWrapper);
         CONNECT_MAP.put(providerServiceName,channelFutureWrappers);
+        Selector selector = new Selector();
+        selector.setProviderServiceName(providerServiceName);
+        IROUTER.refreshRouterArr(selector);
     }
 
 
@@ -88,11 +96,15 @@ public class ConnectionHandler {
      * 默认走随机策略获取ChannelFuture
      */
     public static ChannelFuture getChannelFuture(String providerServiceName){
-        List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(providerServiceName);
-        if (CollectionUtil.isEmpty(channelFutureWrappers)){
-            throw new RuntimeException("no provider exist for " + providerServiceName);
+        Selector selector = new Selector();
+        selector.setProviderServiceName(providerServiceName);
+        //通过指定的路由算法选择一个Provider ChannelFuture
+        ChannelFutureWrapper channelFutureWrapper = IROUTER.select(selector);
+        if (channelFutureWrapper == null) {
+            String message = String.format("no service %s provider", providerServiceName);
+            throw new RuntimeException(message);
         }
 
-        return channelFutureWrappers.get(new Random().nextInt(channelFutureWrappers.size())).getChannelFuture();
+        return channelFutureWrapper.getChannelFuture();
     }
 }

@@ -1,5 +1,6 @@
 package cn.onenine.irpc.framework.core.common.cache;
 
+import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
 
 import java.util.List;
@@ -19,5 +20,8 @@ public class CommonServerCache {
     public static Map<String,Object> PROVIDER_CLASS_MAP = new ConcurrentHashMap<String, Object>();
 
     public static Set<URL> PROVIDER_URL_SET = new CopyOnWriteArraySet<>();
+
+
+    public static RegistryService REGISTRY_SERVICE;
 
 }

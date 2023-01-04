@@ -13,6 +13,8 @@ import cn.onenine.irpc.framework.core.common.RpcDecoder;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.registy.zookeeper.AbstractRegister;
 import cn.onenine.irpc.framework.core.registy.zookeeper.ZookeeperRegister;
+import cn.onenine.irpc.framework.core.router.RandomRouterImpl;
+import cn.onenine.irpc.framework.core.router.RotateRouterImpl;
 import cn.onenine.irpc.framework.interfaces.DataService;
 import com.alibaba.fastjson2.JSONObject;
 import io.netty.bootstrap.Bootstrap;
@@ -22,11 +24,15 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.concurrent.EventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
+
+import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.IROUTER;
+import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.URL_MAP;
+import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.*;
 
 /**
  * @author li.hongjian
@@ -96,6 +102,8 @@ public class Client {
         url.setApplicationName(clientConfig.getApplicationName());
         url.setServiceName(serviceBean.getName());
         url.addParameter("host", CommonUtils.getIpAddress());
+        Map<String, String> result = abstractRegister.getServiceWeightMap(serviceBean.getName());
+        URL_MAP.put(serviceBean.getName(), result);
         abstractRegister.subscribe(url);
     }
 
@@ -103,17 +111,19 @@ public class Client {
      * 开始和各个provider建立连接
      */
     public void doConnectServer() {
-        for (String providerServiceName : CommonClientCache.SUBSCRIBE_SERVICE_LIST) {
-            List<String> providerIps = abstractRegister.getProviderIps(providerServiceName);
+        for (URL providerUrl : CommonClientCache.SUBSCRIBE_SERVICE_LIST) {
+            List<String> providerIps = abstractRegister.getProviderIps(providerUrl.getServiceName());
             for (String providerIp : providerIps) {
                 try {
-                    ConnectionHandler.connect(providerServiceName, providerIp);
+                    ConnectionHandler.connect(providerUrl.getServiceName(), providerIp);
                 } catch (InterruptedException e) {
                     LOGGER.error("[doConnectServer] connect fail", e);
                 }
             }
             URL url = new URL();
-            url.setServiceName(providerServiceName);
+            url.setServiceName(providerUrl.getServiceName());
+            url.addParameter("servicePath", providerUrl.getServiceName() + "/provider");
+            url.addParameter("providerIps", JSONObject.toJSONString(providerIps));
             abstractRegister.doAfterSubscribe(url);
         }
     }
@@ -158,6 +168,9 @@ public class Client {
     public static void main(String[] args) throws Throwable {
         Client client = new Client();
         RpcReference rpcReference = client.initClientApplication();
+        //初始化客户端配置，如路由策略
+        client.initConfig();
+
         DataService dataService = rpcReference.get(DataService.class);
         client.doSubscribeService(DataService.class);
         ConnectionHandler.setBootstrap(client.getBootstrap());
@@ -171,6 +184,18 @@ public class Client {
             } catch (InterruptedException e) {
                 LOGGER.error("client error ", e);
             }
+        }
+
+    }
+
+
+    private void initConfig() {
+        //初始化路由策略
+        String routeStrategy = clientConfig.getRouteStrategy();
+        if (RANDOM_ROUTER_TYPE.equals(routeStrategy)) {
+            IROUTER = new RandomRouterImpl();
+        } else if (ROTATE_ROUTER_TYPE.equals(routeStrategy)) {
+            IROUTER = new RotateRouterImpl();
         }
 
     }
