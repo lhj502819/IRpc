@@ -107,12 +107,14 @@ public class ConnectionHandler {
             throw new RuntimeException("no provider exist for " + rpcInvocation.getTargetServiceName());
         }
 
+        ArrayList<ChannelFutureWrapper> channelFutureWrappersCopy = Lists.newArrayList(channelFutureWrappers);
         //doFilter
-        CLIENT_FILTER_CHAIN.doFilter(Lists.newArrayList(channelFutureWrappers), rpcInvocation);
+        CLIENT_FILTER_CHAIN.doFilter(channelFutureWrappersCopy, rpcInvocation);
 
         Selector selector = new Selector();
         selector.setProviderServiceName(rpcInvocation.getTargetServiceName());
-        selector.setChannelFutureWrappers(channelFutureWrappers);
+        ChannelFutureWrapper[] channelFutureWrappersArrCopy = new ChannelFutureWrapper[channelFutureWrappersCopy.size()];
+        selector.setChannelFutureWrappers(channelFutureWrappersArrCopy);
         //通过指定的路由算法选择一个Provider ChannelFuture
         return IROUTER.select(selector).getChannelFuture();
     }
