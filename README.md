@@ -8,7 +8,7 @@ SPI全称`Service Provider Interface`，是Jdk提供的一种用来扩展框架�
 ## 常见的SPI实现
 <a name="PIKeO"></a>
 ### jdk原生
-Jdk从1.6起引入了SPI机制，我们需要在指定目录`META-INF/services`下创建我们SPI的文件，文件名称为需要扩展的接口全限定名，如：`**cn.onenine.irpc.framework.core.router.IRouter**`，将自定义的实现类配置到里边，如：**cn.onenine.irpc.framework.core.router.RandomRouterImpl**，这样我们就可以使用Jdk的API去获取到我们自定义的类对象。
+Jdk从1.6起引入了SPI机制，我们需要在指定目录`META-INF/services`下创建我们SPI的文件，文件名称为需要扩展的接口全限定名，如：`cn.onenine.irpc.framework.core.router.IRouter`，将自定义的实现类配置到里边，如：`cn.onenine.irpc.framework.core.router.RandomRouterImpl`，这样我们就可以使用Jdk的API去获取到我们自定义的类对象。
 <a name="aDW3m"></a>
 #### 使用方式
 **可扩展接口定义**
