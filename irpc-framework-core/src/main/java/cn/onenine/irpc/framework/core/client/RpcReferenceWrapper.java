@@ -37,12 +37,40 @@ public class RpcReferenceWrapper<T> {
         this.attatchments.put("token", token);
     }
 
+    /**
+     * 设置是否异步执行，默认为同步
+     */
     public void setAsync(boolean async){
         this.attatchments.put("async",async);
     }
 
+    /**
+     * 是否异步执行
+     */
     public boolean isAsync(){
-        return (boolean) this.attatchments.get("async");
+        Object async = this.attatchments.get("async");
+        if (async == null) {
+            return false;
+        }
+        return (boolean) async;
     }
+
+
+    public String getUrl() {
+        return String.valueOf(attatchments.get("url"));
+    }
+
+    public void setUrl(String url) {
+        attatchments.put("url", url);
+    }
+
+    public void setTimeOut(int timeOut) {
+        attatchments.put("timeOut", timeOut);
+    }
+
+    public String getTimeOUt() {
+        return String.valueOf(attatchments.get("timeOut"));
+    }
+
 
 }

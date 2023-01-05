@@ -16,7 +16,7 @@ public class ClientConfig {
     /**
      * 接口调用超时时间
      */
-    private long callTimeout = 3000;
+    private String callTimeout = "3000";
 
     private String routeStrategy;
 
@@ -78,11 +78,11 @@ public class ClientConfig {
         this.proxyType = proxyType;
     }
 
-    public long getCallTimeout() {
-        return callTimeout;
+    public int getCallTimeout() {
+        return Integer.parseInt(callTimeout);
     }
 
-    public void setCallTimeout(long callTimeout) {
+    public void setCallTimeout(String callTimeout) {
         this.callTimeout = callTimeout;
     }
 }

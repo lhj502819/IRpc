@@ -17,6 +17,6 @@ public class JDKProxyFactory implements ProxyFactory {
     @Override
     public <T> T getProxy(RpcReferenceWrapper<T> rpcReferenceWrapper) throws Throwable {
         return (T) Proxy.newProxyInstance(rpcReferenceWrapper.getAimClass().getClassLoader(),
-                new Class[]{rpcReferenceWrapper.getAimClass()}, new JDKClientInvocationHandler(rpcReferenceWrapper, PropertiesBootstrap.loadClientConfigFromLocal().getCallTimeout()));
+                new Class[]{rpcReferenceWrapper.getAimClass()}, new JDKClientInvocationHandler(rpcReferenceWrapper));
     }
 }

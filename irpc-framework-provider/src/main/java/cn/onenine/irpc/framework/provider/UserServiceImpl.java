@@ -1,4 +1,4 @@
-package cn.onenine.irpc.framework.core.server;
+package cn.onenine.irpc.framework.provider;
 
 import cn.onenine.irpc.framework.interfaces.UserService;
 

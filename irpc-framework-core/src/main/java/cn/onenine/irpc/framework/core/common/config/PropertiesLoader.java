@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -22,7 +23,7 @@ public class PropertiesLoader {
 
     private static Map<String, String> propertiesMap = new HashMap<>();
 
-    private static String DEFAULT_PROPERTIES_FILE = "E:\\workspaces\\IRpc\\irpc-framework-core\\src\\main\\resources\\irpc.properties";
+    private static String DEFAULT_PROPERTIES_FILE = "irpc.properties";
 
     public static void loadConfiguration() throws IOException {
         if (properties != null) {
@@ -30,7 +31,8 @@ public class PropertiesLoader {
         }
 
         properties = new Properties();
-        FileInputStream in = new FileInputStream(DEFAULT_PROPERTIES_FILE);
+//        FileInputStream in = new FileInputStream(DEFAULT_PROPERTIES_FILE);
+        InputStream in = PropertiesLoader.class.getClassLoader().getResourceAsStream(DEFAULT_PROPERTIES_FILE);
         properties.load(in);
 
     }

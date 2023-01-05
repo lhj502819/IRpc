@@ -1,4 +1,4 @@
-package cn.onenine.irpc.framework.core.server;
+package cn.onenine.irpc.framework.provider;
 
 import cn.onenine.irpc.framework.interfaces.DataService;
 import org.slf4j.Logger;
@@ -14,11 +14,11 @@ import java.util.List;
  */
 public class DataServiceImpl implements DataService {
 
-    private Logger logger = LoggerFactory.getLogger(DataServiceImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataServiceImpl.class);
 
     @Override
     public String sendData(String body) {
-        logger.info("已收到的参数长度：" + body.length());
+        LOGGER.info("已收到的参数长度：" + body.length());
         return "success";
     }
 

@@ -34,6 +34,10 @@ public class PropertiesBootstrap {
 
     public static final String REGISTER_TYPE = "irpc.registerType";
 
+    public static final String SERVER_QUEUE_SIZE = "irpc.server.queue.size";
+
+    public static final String SERVER_BIZ_THREAD_NUMS = "irpc.server.biz_thread_nums";
+
     public static ServerConfig loadServerConfigFromLocal(){
         try {
             PropertiesLoader.loadConfiguration();;
@@ -47,6 +51,8 @@ public class PropertiesBootstrap {
         serverConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
         serverConfig.setServerSerialize(PropertiesLoader.getPropertiesStr(SERVER_SERIALIZE_TYPE));
         serverConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
+        serverConfig.setServerQueueSize(PropertiesLoader.getPropertiesInteger(SERVER_QUEUE_SIZE));
+        serverConfig.setServerBizThreadNums(PropertiesLoader.getPropertiesInteger(SERVER_BIZ_THREAD_NUMS));
         return serverConfig;
     }
 
@@ -61,7 +67,7 @@ public class PropertiesBootstrap {
         clientConfig.setApplicationName(PropertiesLoader.getPropertiesStr(APPLICATION_NAME));
         clientConfig.setRegisterAddr(PropertiesLoader.getPropertiesStr(REGISTER_ADDRESS));
         clientConfig.setProxyType(PropertiesLoader.getPropertiesStr(PROXY_TYPE));
-        clientConfig.setCallTimeout(Long.parseLong(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT))));
+        clientConfig.setCallTimeout(Objects.requireNonNull(PropertiesLoader.getPropertiesStr(CALL_TIMEOUT)));
         clientConfig.setRouteStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
         clientConfig.setClientSerialize(PropertiesLoader.getPropertiesStr(CLIENT_SERIALIZE_TYPE));
         clientConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));

@@ -31,12 +31,9 @@ public class JDKClientInvocationHandler implements InvocationHandler {
     private Long timeout ;
 
 
-    public JDKClientInvocationHandler(RpcReferenceWrapper rpcReferenceWrapper, Long executeTimeout) {
+    public JDKClientInvocationHandler(RpcReferenceWrapper rpcReferenceWrapper) {
         this.rpcReferenceWrapper = rpcReferenceWrapper;
-        if (executeTimeout == null){
-            throw new IllegalArgumentException("executeTimeout must not null and gt 0 ");
-        }
-        this.timeout = executeTimeout;
+        this.timeout = Long.valueOf(rpcReferenceWrapper.getTimeOUt());
     }
 
     @Override
@@ -49,8 +46,13 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         //这里面注入了一个uuid，对每一次的请求都单独区分
         rpcInvocation.setUuid(UUID.randomUUID().toString());
         rpcInvocation.setAttachments(rpcReferenceWrapper.getAttatchments());
-        RESP_MAP.put(rpcInvocation.getUuid(),OBJECT);
         SEND_QUEUE.add(rpcInvocation);
+
+        if (rpcReferenceWrapper.isAsync()){
+            return null;
+        }
+        RESP_MAP.put(rpcInvocation.getUuid(),OBJECT);
+
         long beginTime = System.currentTimeMillis();
         //客户端请求超时的判断依据
         while (System.currentTimeMillis() - beginTime < timeout){
@@ -60,6 +62,6 @@ public class JDKClientInvocationHandler implements InvocationHandler {
             }
         }
 
-        throw new TimeoutException("client wait server's response timeout!");
+        throw new TimeoutException("Wait for response from server on client " +rpcReferenceWrapper.getTimeOUt() + "ms,Server's name is " +rpcInvocation.getTargetServiceName() + "#" + rpcInvocation.getTargetMethod());
     }
 }

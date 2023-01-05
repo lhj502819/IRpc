@@ -62,7 +62,7 @@ public class Client {
      * 客户端需要通过一个代理工厂获取被调用对象的代理对象，然后通过代理对象将数据放入发送队列
      * 最后有一个异步线程将发送队列内部的数据一个个地发送到服务端，并且等待服务端响应对应的数据结果
      */
-    public RpcReference initClientApplication() {
+    public RpcReference initClientApplication() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         EventLoopGroup clientGroup = new NioEventLoopGroup();
         bootstrap.group(clientGroup);
         bootstrap.channel(NioSocketChannel.class);
@@ -79,6 +79,7 @@ public class Client {
         iRpcListenerLoader.init();
 
         CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
+        this.initConfig();
         RpcReference rpcReference = null;
         if ("javassist".equals(CLIENT_CONFIG.getProxyType())) {
 //            rpcReference = new RpcReference(new )
@@ -134,7 +135,7 @@ public class Client {
     /**
      * 开启发送线程，专门从事将数据包发送给服务端，起到一个解耦的作用
      */
-    private void startClient() {
+    public void startClient() {
         //请求发送任务交给单独的IO线程去负责，实现异步化，提升发送性能
         Thread asyncSendJob = new Thread(new AsyncSendJob());
         asyncSendJob.start();
@@ -166,33 +167,7 @@ public class Client {
     }
 
 
-    public static void main(String[] args) throws Throwable {
-        Client client = new Client();
-        RpcReference rpcReference = client.initClientApplication();
-        //初始化客户端配置，如路由策略
-        client.initConfig();
-        RpcReferenceWrapper<DataService> dataServiceRpcReferenceWrapper = new RpcReferenceWrapper<>();
-        dataServiceRpcReferenceWrapper.setAimClass(DataService.class);
-        dataServiceRpcReferenceWrapper.setGroup("test");
-        dataServiceRpcReferenceWrapper.setToken("token-a");
 
-        DataService dataService = rpcReference.get(dataServiceRpcReferenceWrapper);
-        client.doSubscribeService(DataService.class);
-        ConnectionHandler.setBootstrap(client.getBootstrap());
-        //连接所有的Provider
-        client.doConnectServer();
-        client.startClient();
-        for (int i = 0; i < 100; i++) {
-            try {
-                String result = dataService.sendData("test");
-                System.out.println(result);
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                LOGGER.error("client error ", e);
-            }
-        }
-
-    }
 
     private void initConfig() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         //初始化路由策略

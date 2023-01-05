@@ -20,6 +20,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -35,16 +37,15 @@ import static cn.onenine.irpc.framework.core.spi.ExtensionLoader.EXTENSION_LOADE
  */
 public class Server {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
+
     private static EventLoopGroup bossGroup = null;
 
     private static EventLoopGroup workerGroup = null;
 
     private static IRpcListenerLoader iRpcListenerLoader;
 
-
-    public ServerConfig getServerConfig() {
-        return SERVER_CONFIG;
-    }
+    private ServerHandler serverHandler;
 
     public void startApplication() throws InterruptedException {
         bossGroup = new NioEventLoopGroup();
@@ -58,18 +59,23 @@ public class Server {
                 .option(ChannelOption.SO_RCVBUF, 16 * 1024)
                 .option(ChannelOption.SO_KEEPALIVE, true);
 
+        serverHandler = new ServerHandler();
+
         bootStrap.childHandler(new ChannelInitializer<SocketChannel>() {
             protected void initChannel(SocketChannel channel) throws Exception {
                 System.out.println("初始化provider过程");
                 channel.pipeline().addLast(new RpcEncoder());
                 channel.pipeline().addLast(new RpcDecoder());
-                channel.pipeline().addLast(new ServerHandler());
+                channel.pipeline().addLast(serverHandler);
             }
         });
 
         this.batchExportUrl();
+        //开启接收任务请求
+        SERVER_CHANNEL_DISPATCHER.startDataConsume();
 
         bootStrap.bind(SERVER_CONFIG.getPort()).sync();
+        LOGGER.info("Server started..");
     }
 
     /**
@@ -136,6 +142,8 @@ public class Server {
 
     public void initServerConfig() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         SERVER_CONFIG = PropertiesBootstrap.loadServerConfigFromLocal();
+        //初始化线程池和队列的配置
+        SERVER_CHANNEL_DISPATCHER.init(SERVER_CONFIG.getServerQueueSize(), SERVER_CONFIG.getServerBizThreadNums());
         //初始化序列化方式
         EXTENSION_LOADER.loadExtension(SerializeFactory.class);
         String serializeType = SERVER_CONFIG.getServerSerialize();
@@ -158,29 +166,6 @@ public class Server {
             serverFilterChain.addServerFilter((IServerFilter) filterClass.newInstance());
         }
         SERVER_FILTER_CHAIN = serverFilterChain;
-    }
-
-
-    public static void main(String[] args) throws InterruptedException {
-        try {
-            Server server = new Server();
-            server.initServerConfig();
-            iRpcListenerLoader = new IRpcListenerLoader();
-            iRpcListenerLoader.init();
-            ServiceWrapper dataServiceWrapper = new ServiceWrapper(new DataServiceImpl(),"test");
-            dataServiceWrapper.setServiceToken("token-a");
-            dataServiceWrapper.setLimit(2);
-            server.exportService(dataServiceWrapper);
-            ServiceWrapper userServiceWrapper = new ServiceWrapper(new UserServiceImpl(),"dev");
-            userServiceWrapper.setServiceToken("token-b");
-            userServiceWrapper.setLimit(2);
-            server.exportService(userServiceWrapper);
-            //注册destroy钩子函数
-            ApplicationShutdownHook.registryShutdownHook();
-            server.startApplication();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 }

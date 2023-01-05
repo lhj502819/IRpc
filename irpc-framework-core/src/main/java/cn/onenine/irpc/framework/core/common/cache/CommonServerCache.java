@@ -1,6 +1,7 @@
 package cn.onenine.irpc.framework.core.common.cache;
 
 import cn.onenine.irpc.framework.core.config.ServerConfig;
+import cn.onenine.irpc.framework.core.dispatcher.ServerChannelDispatcher;
 import cn.onenine.irpc.framework.core.filter.server.ServerFilterChain;
 import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
@@ -47,6 +48,8 @@ public class CommonServerCache {
     public static ExtensionLoader EXTENSION_LOADER = new ExtensionLoader();
 
     public static ServerConfig SERVER_CONFIG;
+
+    public static ServerChannelDispatcher SERVER_CHANNEL_DISPATCHER = new ServerChannelDispatcher();
 
 
 }

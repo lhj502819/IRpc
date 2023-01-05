@@ -25,6 +25,32 @@ public class ServerConfig {
      */
     private String registerType;
 
+    /**
+     * 任务队列大小
+     */
+    private Integer serverQueueSize;
+
+    /**
+     * 处理业务线程数
+     */
+    private Integer serverBizThreadNums;
+
+    public Integer getServerQueueSize() {
+        return serverQueueSize;
+    }
+
+    public void setServerQueueSize(Integer serverQueueSize) {
+        this.serverQueueSize = serverQueueSize;
+    }
+
+    public Integer getServerBizThreadNums() {
+        return serverBizThreadNums;
+    }
+
+    public void setServerBizThreadNums(Integer serverBizThreadNums) {
+        this.serverBizThreadNums = serverBizThreadNums;
+    }
+
     public String getRegisterType() {
         return registerType;
     }
