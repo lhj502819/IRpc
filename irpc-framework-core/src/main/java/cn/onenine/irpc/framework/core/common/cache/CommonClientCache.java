@@ -8,7 +8,7 @@ import cn.onenine.irpc.framework.core.filter.client.ClientFilterChain;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.router.IRouter;
 import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
-import cn.onenine.irpc.framework.core.spi.jdk.ExtensionLoader;
+import cn.onenine.irpc.framework.core.spi.ExtensionLoader;
 
 import java.util.HashSet;
 import java.util.List;

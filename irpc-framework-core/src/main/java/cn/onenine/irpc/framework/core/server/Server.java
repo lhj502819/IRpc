@@ -26,8 +26,7 @@ import java.util.LinkedHashMap;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.*;
 import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.EXTENSION_LOADER;
-import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.*;
-import static cn.onenine.irpc.framework.core.spi.jdk.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
+import static cn.onenine.irpc.framework.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
  * @author li.hongjian

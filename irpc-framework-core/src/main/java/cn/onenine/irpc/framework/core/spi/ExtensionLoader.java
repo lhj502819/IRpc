@@ -1,4 +1,4 @@
-package cn.onenine.irpc.framework.core.spi.jdk;
+package cn.onenine.irpc.framework.core.spi;
 
 import java.io.BufferedReader;
 import java.io.IOException;

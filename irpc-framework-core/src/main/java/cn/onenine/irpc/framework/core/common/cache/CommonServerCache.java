@@ -6,7 +6,7 @@ import cn.onenine.irpc.framework.core.registy.RegistryService;
 import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
 import cn.onenine.irpc.framework.core.server.ServiceWrapper;
-import cn.onenine.irpc.framework.core.spi.jdk.ExtensionLoader;
+import cn.onenine.irpc.framework.core.spi.ExtensionLoader;
 
 import java.util.HashMap;
 import java.util.List;

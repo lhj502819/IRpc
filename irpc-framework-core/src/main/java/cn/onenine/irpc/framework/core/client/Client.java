@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.*;
-import static cn.onenine.irpc.framework.core.spi.jdk.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
+import static cn.onenine.irpc.framework.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
  * @author li.hongjian
