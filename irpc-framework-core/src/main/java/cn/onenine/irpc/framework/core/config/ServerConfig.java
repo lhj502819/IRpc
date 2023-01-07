@@ -35,6 +35,32 @@ public class ServerConfig {
      */
     private Integer serverBizThreadNums;
 
+    /**
+     * 限制服务端最大所能接受的数据包体积
+     */
+    private Integer maxServerRequestData;
+
+    /**
+     * 服务端最大连接数
+     */
+    private Integer maxConnections;
+
+    public Integer getMaxConnections() {
+        return maxConnections;
+    }
+
+    public void setMaxConnections(Integer maxConnections) {
+        this.maxConnections = maxConnections;
+    }
+
+    public Integer getMaxServerRequestData() {
+        return maxServerRequestData;
+    }
+
+    public void setMaxServerRequestData(Integer maxServerRequestData) {
+        this.maxServerRequestData = maxServerRequestData;
+    }
+
     public Integer getServerQueueSize() {
         return serverQueueSize;
     }

@@ -1,5 +1,6 @@
 package cn.onenine.irpc.framework.core.common;
 
+import cn.onenine.irpc.framework.core.common.constant.RpcConstants;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -18,6 +19,7 @@ public class RpcEncoder extends MessageToByteEncoder<RpcProtocol> {
         out.writeShort(msg.getMagicNumber());
         out.writeInt(msg.getContentLength());
         out.writeBytes(msg.getContent());
+        out.writeBytes(RpcConstants.DEFAULT_DECODE_CHAR.getBytes());
     }
     
 }

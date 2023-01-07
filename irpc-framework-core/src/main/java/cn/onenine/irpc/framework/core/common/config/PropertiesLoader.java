@@ -2,6 +2,7 @@ package cn.onenine.irpc.framework.core.common.config;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.onenine.irpc.framework.core.common.utils.CommonUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -70,6 +71,30 @@ public class PropertiesLoader {
         }
 
         return Integer.valueOf(value);
+    }
+
+    /**
+     * 根据键值获取配置属性
+     *
+     * @param key
+     * @return
+     */
+    public static Integer getPropertiesIntegerDefault(String key,Integer defaultVal) {
+        if (properties == null) {
+            return defaultVal;
+        }
+        if (StrUtil.isBlank(key)) {
+            return defaultVal;
+        }
+        String value = properties.getProperty(key);
+        if(value==null){
+            propertiesMap.put(key, String.valueOf(defaultVal));
+            return defaultVal;
+        }
+        if (!propertiesMap.containsKey(key)) {
+            propertiesMap.put(key, value);
+        }
+        return Integer.valueOf(propertiesMap.get(key));
     }
 
 

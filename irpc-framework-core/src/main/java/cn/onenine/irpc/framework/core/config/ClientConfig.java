@@ -30,6 +30,19 @@ public class ClientConfig {
      */
     private String registerType;
 
+    /**
+     * 最大接收的server端响应数据大小
+     */
+    private Integer maxServerRespDataSize;
+
+    public Integer getMaxServerRespDataSize() {
+        return maxServerRespDataSize;
+    }
+
+    public void setMaxServerRespDataSize(Integer maxServerRespDataSize) {
+        this.maxServerRespDataSize = maxServerRespDataSize;
+    }
+
     public String getRegisterType() {
         return registerType;
     }

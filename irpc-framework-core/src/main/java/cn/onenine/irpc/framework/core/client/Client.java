@@ -18,12 +18,15 @@ import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
 import cn.onenine.irpc.framework.interfaces.DataService;
 import com.alibaba.fastjson2.JSONObject;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.*;
+import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.DEFAULT_DECODE_CHAR;
 import static cn.onenine.irpc.framework.core.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
@@ -69,6 +73,8 @@ public class Client {
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel channel) throws Exception {
+                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+                channel.pipeline().addLast(new DelimiterBasedFrameDecoder(CLIENT_CONFIG.getMaxServerRespDataSize(), delimiter));
                 //管道中初始化一些逻辑，这里包含了上边所说的编解码器和客户端响应类
                 channel.pipeline().addLast(new RpcEncoder());
                 channel.pipeline().addLast(new RpcDecoder());
@@ -155,10 +161,13 @@ public class Client {
                 try {
                     //阻塞模式
                     RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
-                    //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了ServerHandler
-                    RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
                     ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data);
-                    channelFuture.channel().writeAndFlush(rpcProtocol);
+                    //判断channel是否已经中断
+                    if (channelFuture.channel().isOpen()) {
+                        //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了ServerHandler
+                        RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
+                        channelFuture.channel().writeAndFlush(rpcProtocol);
+                    }
                 } catch (Exception e) {
                     LOGGER.error("client call error", e);
                 }

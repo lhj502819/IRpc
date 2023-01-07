@@ -6,6 +6,8 @@ import cn.onenine.irpc.framework.core.config.ServerConfig;
 import java.io.IOException;
 import java.util.Objects;
 
+import static cn.onenine.irpc.framework.core.common.constant.RpcConstants.*;
+
 /**
  * 主要负责将properties的配置转换成本地的一个Map结构进行管理
  * @author li.hongjian
@@ -38,6 +40,12 @@ public class PropertiesBootstrap {
 
     public static final String SERVER_BIZ_THREAD_NUMS = "irpc.server.biz_thread_nums";
 
+    public static final String SERVER_MAX_CONNECTION = "irpc.server.max.connection";
+
+    public static final String SERVER_MAX_DATA_SIZE = "irpc.server.max.data.size";
+
+    public static final String CLIENT_MAX_DATA_SIZE = "irpc.client.max.data.size";
+
     public static ServerConfig loadServerConfigFromLocal(){
         try {
             PropertiesLoader.loadConfiguration();;
@@ -53,6 +61,8 @@ public class PropertiesBootstrap {
         serverConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
         serverConfig.setServerQueueSize(PropertiesLoader.getPropertiesInteger(SERVER_QUEUE_SIZE));
         serverConfig.setServerBizThreadNums(PropertiesLoader.getPropertiesInteger(SERVER_BIZ_THREAD_NUMS));
+        serverConfig.setMaxConnections(PropertiesLoader.getPropertiesIntegerDefault(SERVER_MAX_CONNECTION,DEFAULT_MAX_CONNECTION_NUMS));
+        serverConfig.setMaxServerRequestData(PropertiesLoader.getPropertiesIntegerDefault(SERVER_MAX_DATA_SIZE,SERVER_DEFAULT_MSG_LENGTH));
         return serverConfig;
     }
 
@@ -71,6 +81,7 @@ public class PropertiesBootstrap {
         clientConfig.setRouteStrategy(PropertiesLoader.getPropertiesStr(ROUTE_STRATEGY));
         clientConfig.setClientSerialize(PropertiesLoader.getPropertiesStr(CLIENT_SERIALIZE_TYPE));
         clientConfig.setRegisterType(PropertiesLoader.getPropertiesStr(REGISTER_TYPE));
+        clientConfig.setMaxServerRespDataSize(PropertiesLoader.getPropertiesIntegerDefault(CLIENT_MAX_DATA_SIZE,CLIENT_DEFAULT_MSG_LENGTH));
         return clientConfig;
     }
 }

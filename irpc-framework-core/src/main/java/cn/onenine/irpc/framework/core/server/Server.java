@@ -3,7 +3,10 @@ package cn.onenine.irpc.framework.core.server;
 import cn.hutool.core.util.StrUtil;
 import cn.onenine.irpc.framework.core.common.RpcDecoder;
 import cn.onenine.irpc.framework.core.common.RpcEncoder;
+import cn.onenine.irpc.framework.core.common.ServerServiceSemaphoreWrapper;
+import cn.onenine.irpc.framework.core.common.annotations.SPI;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
+import cn.onenine.irpc.framework.core.common.constant.RpcConstants;
 import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
 import cn.onenine.irpc.framework.core.common.utils.CommonUtils;
 import cn.onenine.irpc.framework.core.config.ServerConfig;
@@ -14,16 +17,20 @@ import cn.onenine.irpc.framework.core.registy.URL;
 import cn.onenine.irpc.framework.core.registy.zookeeper.AbstractRegister;
 import cn.onenine.irpc.framework.core.serialize.SerializeFactory;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.LinkedHashMap;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.*;
@@ -47,6 +54,8 @@ public class Server {
 
     private ServerHandler serverHandler;
 
+    private MaxConnectionLimitHandler maxConnectionLimitHandler;
+
     public void startApplication() throws InterruptedException {
         bossGroup = new NioEventLoopGroup();
         workerGroup = new NioEventLoopGroup();
@@ -59,16 +68,22 @@ public class Server {
                 .option(ChannelOption.SO_RCVBUF, 16 * 1024)
                 .option(ChannelOption.SO_KEEPALIVE, true);
 
+        maxConnectionLimitHandler = new MaxConnectionLimitHandler(SERVER_CONFIG.getMaxConnections());
+        bootStrap.handler(maxConnectionLimitHandler);
+
         serverHandler = new ServerHandler();
 
         bootStrap.childHandler(new ChannelInitializer<SocketChannel>() {
             protected void initChannel(SocketChannel channel) throws Exception {
-                System.out.println("初始化provider过程");
+                LOGGER.info("初始化provider过程");
+                ByteBuf delimiter = Unpooled.copiedBuffer(RpcConstants.DEFAULT_DECODE_CHAR.getBytes());
+                channel.pipeline().addLast(new DelimiterBasedFrameDecoder(SERVER_CONFIG.getMaxServerRequestData(), delimiter));
                 channel.pipeline().addLast(new RpcEncoder());
                 channel.pipeline().addLast(new RpcDecoder());
                 channel.pipeline().addLast(serverHandler);
             }
         });
+
 
         this.batchExportUrl();
         //开启接收任务请求
@@ -81,16 +96,16 @@ public class Server {
     /**
      * 暴露服务信息
      */
-    public void exportService(ServiceWrapper serviceWrapper){
+    public void exportService(ServiceWrapper serviceWrapper) {
         Object serviceBean = serviceWrapper.getServerObj();
-        if (serviceBean.getClass().getInterfaces().length == 0){
+        if (serviceBean.getClass().getInterfaces().length == 0) {
             throw new RuntimeException("service must had interfaces!");
         }
         Class<?>[] classes = serviceBean.getClass().getInterfaces();
-        if (classes.length >1){
+        if (classes.length > 1) {
             throw new RuntimeException("service must only had one interfaces!");
         }
-        if (REGISTRY_SERVICE == null){
+        if (REGISTRY_SERVICE == null) {
             try {
                 //使用自定义的SPI机制加载配置
                 EXTENSION_LOADER.loadExtension(RegistryService.class);
@@ -104,17 +119,21 @@ public class Server {
         }
         //默认选择该对象的第一个实现
         Class<?> interfaceClass = classes[0];
-        PROVIDER_CLASS_MAP.put(interfaceClass.getName(),serviceBean);
+        PROVIDER_CLASS_MAP.put(interfaceClass.getName(), serviceBean);
         URL url = new URL();
         url.setServiceName(interfaceClass.getName());
         url.setApplicationName(SERVER_CONFIG.getApplicationName());
         url.addParameter("host", CommonUtils.getIpAddress());
-        url.addParameter("port",String.valueOf(SERVER_CONFIG.getPort()));
+        url.addParameter("port", String.valueOf(SERVER_CONFIG.getPort()));
         url.addParameter("group", String.valueOf(serviceWrapper.getGroup()));
-        url.addParameter("limit",String.valueOf(serviceWrapper.getLimit()));
+        url.addParameter("limit", String.valueOf(serviceWrapper.getLimit()));
+
+        //设置服务端的限流器
+        SERVER_SERVICE_SEMAPHORE_MAP.put(interfaceClass.getName(),new ServerServiceSemaphoreWrapper(serviceWrapper.getLimit()));
+
         PROVIDER_URL_SET.add(url);
-        if (StrUtil.isNotBlank(serviceWrapper.getServiceToken())){
-            PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(),serviceWrapper);
+        if (StrUtil.isNotBlank(serviceWrapper.getServiceToken())) {
+            PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(), serviceWrapper);
         }
 
     }
@@ -156,16 +175,28 @@ public class Server {
 
         //初始化过滤链
         EXTENSION_LOADER.loadExtension(IServerFilter.class);
-        ServerFilterChain serverFilterChain = new ServerFilterChain();
+        ServerFilterChain serverBeforeFilterChain = new ServerFilterChain();
+        ServerFilterChain serverAfterFilterChain = new ServerFilterChain();
         LinkedHashMap<String, Class> filterMap = EXTENSION_LOADER_CLASS_CACHE.get(IServerFilter.class.getName());
         for (String implClassName : filterMap.keySet()) {
             Class filterClass = filterMap.get(implClassName);
             if (filterClass == null) {
                 throw new NullPointerException("no match server filter for " + implClassName);
             }
-            serverFilterChain.addServerFilter((IServerFilter) filterClass.newInstance());
+            Annotation spiAnnotation = filterClass.getDeclaredAnnotation(SPI.class);
+            if (spiAnnotation == null) {
+                LOGGER.warn("filter {}spi annotation is null ", filterClass.getName());
+                continue;
+            }
+            SPI spi = (SPI) spiAnnotation;
+            if ("before".equals(spi.value())) {
+                serverBeforeFilterChain.addServerFilter((IServerFilter) filterClass.newInstance());
+            } else if ("after".equals(spi.value())) {
+                serverAfterFilterChain.addServerFilter((IServerFilter) filterClass.newInstance());
+            }
         }
-        SERVER_FILTER_CHAIN = serverFilterChain;
+        SERVER_BEFORE_FILTER_CHAIN = serverBeforeFilterChain;
+        SERVER_AFTER_FILTER_CHAIN = serverAfterFilterChain;
     }
 
 }

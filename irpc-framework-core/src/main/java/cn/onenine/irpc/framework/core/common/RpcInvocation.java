@@ -1,5 +1,6 @@
 package cn.onenine.irpc.framework.core.common;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,8 +11,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @email lhj502819@163.com
  * @since 2022/12/17 10:53
  */
-public class RpcInvocation {
+public class RpcInvocation implements Serializable {
 
+    private static final long serialVersionUID = 4925694661803675105L;
     /**
      * 请求的目标方法，例如finderUser
      */
@@ -39,9 +41,34 @@ public class RpcInvocation {
     private Object response;
 
     /**
+     * 异常堆栈
+     */
+    private Throwable e;
+
+    /**
+     * 重试机制
+     */
+    private int retry;
+    /**
      * 附加信息
      */
     private Map<String, Object> attachments = new ConcurrentHashMap<>();
+
+    public Throwable getE() {
+        return e;
+    }
+
+    public void setE(Throwable e) {
+        this.e = e;
+    }
+
+    public int getRetry() {
+        return retry;
+    }
+
+    public void setRetry(int retry) {
+        this.retry = retry;
+    }
 
     public Map<String, Object> getAttachments() {
         return attachments;
@@ -89,6 +116,11 @@ public class RpcInvocation {
 
     public void setResponse(Object response) {
         this.response = response;
+    }
+
+    public void clearRespAndError(){
+        this.response = null;
+        this.e = null;
     }
 
     @Override

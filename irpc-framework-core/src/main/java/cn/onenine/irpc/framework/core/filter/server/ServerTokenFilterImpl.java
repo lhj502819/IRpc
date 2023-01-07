@@ -2,6 +2,7 @@ package cn.onenine.irpc.framework.core.filter.server;
 
 import cn.hutool.core.util.StrUtil;
 import cn.onenine.irpc.framework.core.common.RpcInvocation;
+import cn.onenine.irpc.framework.core.common.annotations.SPI;
 import cn.onenine.irpc.framework.core.server.ServiceWrapper;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.PROVIDER_SERVICE_WRAPPER_MAP;
@@ -13,6 +14,7 @@ import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.PROV
  * @email lhj502819@163.com
  * @since 2023/1/3 22:00
  */
+@SPI("before")
 public class ServerTokenFilterImpl implements IServerFilter {
     @Override
     public void doFilter(RpcInvocation rpcInvocation) {

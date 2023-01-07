@@ -2,6 +2,9 @@ package cn.onenine.irpc.framework.core.dispatcher;
 
 import cn.onenine.irpc.framework.core.common.RpcInvocation;
 import cn.onenine.irpc.framework.core.common.RpcProtocol;
+import cn.onenine.irpc.framework.core.common.cache.CommonServerCache;
+import cn.onenine.irpc.framework.core.common.exception.IRpcException;
+import io.netty.util.ReferenceCountUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -49,8 +52,21 @@ public class ServerChannelDispatcher {
                             RpcProtocol rpcProtocol = serverChannelReadData.getRpcProtocol();
                             RpcInvocation rpcInvocation = SERVER_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(), RpcInvocation.class);
 
-                            //doFilter
-                            SERVER_FILTER_CHAIN.doFilter(rpcInvocation);
+                            try {
+                                //doBeforeFilter 前置过滤器
+                                SERVER_BEFORE_FILTER_CHAIN.doFilter(rpcInvocation);
+                            } catch (Exception e) {
+                                //针对自定义异常进行处理
+                                if (e instanceof IRpcException){
+                                    IRpcException rpcException = (IRpcException) e;
+                                    RpcInvocation reqParam = rpcException.getRpcInvocation();
+
+                                    byte[] body = SERVER_SERIALIZE_FACTORY.serialize(reqParam);
+                                    RpcProtocol respRpcProtocol = new RpcProtocol(body);
+                                    serverChannelReadData.getChannelHandler().writeAndFlush(respRpcProtocol);
+                                    return;
+                                }
+                            }
 
                             //这里的PROVIDER_CLASS_MAP就是一开始预先在启动的时候存储的Bean集合
                             Object aimObject = PROVIDER_CLASS_MAP.get(rpcInvocation.getTargetServiceName());
@@ -59,14 +75,32 @@ public class ServerChannelDispatcher {
                             for (Method method : methods) {
                                 if (method.getName().equals(rpcInvocation.getTargetMethod())) {
                                     if (method.getReturnType().equals(Void.TYPE)) {
-                                        method.invoke(aimObject, rpcInvocation.getArgs());
+                                        try {
+                                            method.invoke(aimObject, rpcInvocation.getArgs());
+                                        } catch (Exception e) {
+                                            //业务异常返回给客户端
+                                            rpcInvocation.setE(e);
+                                        }
                                     } else {
-                                        result = method.invoke(aimObject, rpcInvocation.getArgs());
+                                        try {
+                                            result = method.invoke(aimObject, rpcInvocation.getArgs());
+                                        } catch (Exception e) {
+                                            //业务异常返回给客户端
+                                            rpcInvocation.setE(e);
+                                        }
                                     }
                                     break;
                                 }
+
+                            }
+                            boolean isAsync = (boolean) rpcInvocation.getAttachments().get("async");
+                            if (isAsync){
+                                //如果是异步请求则不用返回结结果，减少网络传输
+                                return;
                             }
                             rpcInvocation.setResponse(result);
+                            //doAfterFilter 后置处理器
+                            SERVER_AFTER_FILTER_CHAIN.doFilter(rpcInvocation);
                             RpcProtocol respRpcProtocol = new RpcProtocol(SERVER_SERIALIZE_FACTORY.serialize(rpcInvocation));
                             serverChannelReadData.getChannelHandler().writeAndFlush(respRpcProtocol);
                         } catch (Exception e) {
@@ -81,7 +115,7 @@ public class ServerChannelDispatcher {
         }
     }
 
-    public void startDataConsume(){
+    public void startDataConsume() {
         Thread thread = new Thread(new ServerJobCoreHandle());
         thread.start();
     }

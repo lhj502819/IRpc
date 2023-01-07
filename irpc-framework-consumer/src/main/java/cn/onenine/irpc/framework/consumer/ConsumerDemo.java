@@ -5,8 +5,11 @@ import cn.onenine.irpc.framework.core.client.ConnectionHandler;
 import cn.onenine.irpc.framework.core.client.RpcReference;
 import cn.onenine.irpc.framework.core.client.RpcReferenceWrapper;
 import cn.onenine.irpc.framework.interfaces.DataService;
+import com.alibaba.fastjson2.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.CLIENT_CONFIG;
 
@@ -39,6 +42,7 @@ public class ConsumerDemo {
             try {
                 String result = dataService.sendData("test");
                 System.out.println(result);
+                System.out.println("=============");
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 LOGGER.error("client error ", e);

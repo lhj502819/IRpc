@@ -72,5 +72,19 @@ public class RpcReferenceWrapper<T> {
         return String.valueOf(attatchments.get("timeOut"));
     }
 
+    /**
+     * 失败重试次数
+     */
+    public int getRetry(){
+        if(attatchments.get("retry")==null){
+            return 0;
+        }else {
+            return (int) attatchments.get("retry");
+        }
+    }
+
+    public void setRetry(int retry){
+        this.attatchments.put("retry",retry);
+    }
 
 }
