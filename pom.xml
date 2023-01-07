@@ -14,6 +14,7 @@
         <module>irpc-framework-jmh</module>
         <module>irpc-framework-provider</module>
         <module>irpc-framework-consumer</module>
+        <module>irpc-framework-spring-starter</module>
     </modules>
 
     <packaging>pom</packaging>

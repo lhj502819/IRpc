@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  cn.onenine.irpc.framework.config.IRpcServerAutoConfiguration

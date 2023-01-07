@@ -199,4 +199,8 @@ public class Server {
         SERVER_AFTER_FILTER_CHAIN = serverAfterFilterChain;
     }
 
+    public ServerConfig getConfig(){
+        return SERVER_CONFIG;
+    }
+
 }
