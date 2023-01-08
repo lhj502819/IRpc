@@ -30,7 +30,7 @@ public class CommonClientCache {
 
     public static BlockingQueue<RpcInvocation> SEND_QUEUE = new ArrayBlockingQueue<RpcInvocation>(100);
 
-    public static Map<String,Object> RESP_MAP = new ConcurrentHashMap<String, Object>();
+    public static Map<String,Object> RESP_MAP = new ConcurrentHashMap<>();
 
     /**
      * provider名称，该服务有哪些集群URL

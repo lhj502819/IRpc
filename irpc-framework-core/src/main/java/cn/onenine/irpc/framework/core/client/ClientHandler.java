@@ -7,6 +7,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.CLIENT_SERIALIZE_FACTORY;
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.RESP_MAP;
@@ -19,19 +21,28 @@ import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.RESP
  */
 public class ClientHandler extends ChannelInboundHandlerAdapter {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(ClientHandler.class);
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         RpcProtocol rpcProtocol = (RpcProtocol) msg;
         byte[] reqContent = rpcProtocol.getContent();
         RpcInvocation rpcInvocation = CLIENT_SERIALIZE_FACTORY.deserialize(reqContent, RpcInvocation.class);
-
         if (rpcInvocation.getE() != null) {
             rpcInvocation.getE().printStackTrace();
         }
 
         //通过之前发送的uuid来注入匹配的响应数值
         if (!RESP_MAP.containsKey(rpcInvocation.getUuid())){
-            throw new IllegalArgumentException("server response is error");
+            LOGGER.info("[ClientHandler#channelRead] request not found method:{} uuid: {} timeStamp:{}" ,rpcInvocation.getTargetMethod(), rpcInvocation.getUuid(),System.currentTimeMillis());
+            LOGGER.info("[ClientHandler#channelRead]RESP_MAP all keys:{} timeStamp:{}",JSONObject.toJSONString(RESP_MAP.keySet()),System.currentTimeMillis());
+//            throw new IllegalArgumentException("server response is error");
+            Thread.sleep(500);
+            if (!RESP_MAP.containsKey(rpcInvocation.getUuid())){
+                LOGGER.info("sleep 500 millions after uuid also not found {}",rpcInvocation.getUuid());
+            }else {
+                LOGGER.info("sleep 500 millions after uuid  founded {}",rpcInvocation.getUuid());
+            }
         }
 
         //将请求的响应结构放入一个Map集合中，集合的key就是uuid，这个uuid在发送请求之前就已经初始化好了

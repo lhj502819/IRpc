@@ -18,7 +18,6 @@ public class ApplicationShutdownHook {
 
     public static void registryShutdownHook(){
         Runtime.getRuntime().addShutdownHook(new Thread(()->{
-            logger.info("[ApplicationShutdownHook#registryShutdownHook]..");
 
             IRpcListenerLoader.sendSyncEvent(new IRpcDestroyEvent("application destroy"));;
         }));

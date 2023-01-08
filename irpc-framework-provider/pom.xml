@@ -10,6 +10,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>irpc-framework-provider</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>irpc-framework-provider-good</module>
+        <module>irpc-framework-provider-pay</module>
+        <module>irpc-framework-provider-user</module>
+    </modules>
 
     <properties>
         <spring-boot-version>2.7.0</spring-boot-version>
@@ -59,6 +65,19 @@
                     <source>8</source>
                     <target>8</target>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot-version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

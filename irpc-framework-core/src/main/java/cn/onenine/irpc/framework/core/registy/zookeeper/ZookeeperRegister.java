@@ -1,5 +1,6 @@
 package cn.onenine.irpc.framework.core.registy.zookeeper;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.onenine.irpc.framework.core.common.event.IRpcEvent;
 import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
 import cn.onenine.irpc.framework.core.common.event.IRpcNodeChangeEvent;
@@ -31,7 +32,7 @@ import static cn.onenine.irpc.framework.core.common.cache.CommonServerCache.SERV
  */
 public class ZookeeperRegister extends AbstractRegister implements RegistryService {
 
-    private static Logger logger = LoggerFactory.getLogger(ZookeeperRegister.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperRegister.class);
 
     private AbstractZookeeperClient zkClient;
 
@@ -76,7 +77,7 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
     private void watchChildNodeData(String newServerNodePath) {
 
         zkClient.watchChildNodeData(newServerNodePath, watchedEvent -> {
-            logger.info("监听到事件：{}", watchedEvent);
+            LOGGER.info("监听到事件：{}", watchedEvent);
             String path = watchedEvent.getPath();
             List<String> childrenDataList = zkClient.getChildrenData(path);
             URLChangeWrapper urlChangeWrapper = new URLChangeWrapper();
@@ -132,11 +133,21 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
     @Override
     public Map<String, String> getServiceWeightMap(String serviceName) {
         List<String> nodeDataList = zkClient.getChildrenData(ROOT + "/" + serviceName + "/provider");
+        if (CollectionUtil.isEmpty(nodeDataList)){
+
+        }
         Map<String, String> result = new HashMap<>();
         for (String ipAndPort : nodeDataList) {
             String nodeData = zkClient.getNodeData(ROOT + "/" + serviceName + "/provider/" + ipAndPort);
             result.put(ipAndPort, nodeData);
         }
         return result;
+    }
+
+    @Override
+    public void unRegister(URL url) {
+        String providerPath = getProviderPath(url);
+        LOGGER.info("unRegister provider Service {}" ,providerPath);
+        zkClient.deleteNode(getProviderPath(url));
     }
 }

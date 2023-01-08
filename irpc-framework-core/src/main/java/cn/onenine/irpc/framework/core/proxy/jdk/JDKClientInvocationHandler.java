@@ -6,10 +6,13 @@ import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
 import cn.onenine.irpc.framework.core.common.exception.IRpcException;
 import cn.onenine.irpc.framework.core.config.ClientConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.RESP_MAP;
@@ -24,6 +27,8 @@ import static cn.onenine.irpc.framework.core.common.cache.CommonClientCache.SEND
  * @since 2022/12/17 13:56
  */
 public class JDKClientInvocationHandler implements InvocationHandler {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(JDKClientInvocationHandler.class);
 
     private final static Object OBJECT = new Object();
 
@@ -48,19 +53,18 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         rpcInvocation.setUuid(UUID.randomUUID().toString());
         rpcInvocation.setAttachments(rpcReferenceWrapper.getAttatchments());
         rpcInvocation.setRetry(rpcReferenceWrapper.getRetry());
+        SEND_QUEUE.add(rpcInvocation);
+        if (rpcReferenceWrapper.isAsync()) {
+            return null;
+        }
+        RESP_MAP.put(rpcInvocation.getUuid(), OBJECT);
+        LOGGER.info("add request to RESP_MAP uuid:{} timeStamp:{}",rpcInvocation.getUuid(),System.currentTimeMillis());
+        long beginTime = System.currentTimeMillis();
+        long nowTimeMillis = System.currentTimeMillis();
+
+        //总重试次数
+        int retryTimes = 0;
         try {
-            SEND_QUEUE.add(rpcInvocation);
-
-            if (rpcReferenceWrapper.isAsync()) {
-                return null;
-            }
-            RESP_MAP.put(rpcInvocation.getUuid(), OBJECT);
-
-            long beginTime = System.currentTimeMillis();
-            long nowTimeMillis = System.currentTimeMillis();
-
-            //总重试次数
-            int retryTimes = 0;
             //客户端请求超时的判断依据
             while (true) {
                 Object object = RESP_MAP.get(rpcInvocation.getUuid());
@@ -95,6 +99,7 @@ public class JDKClientInvocationHandler implements InvocationHandler {
                 }
             }
         } finally {
+            LOGGER.info("[JDKClientInvocationHandler#invoke] irpc remove uuid {} timeStamp:{}" , rpcInvocation.getUuid(),System.currentTimeMillis());
             RESP_MAP.remove(rpcInvocation.getUuid());
         }
     }

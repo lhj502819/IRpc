@@ -24,6 +24,8 @@ import java.util.concurrent.Executors;
  */
 public class IRpcListenerLoader {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(IRpcListenerLoader.class);
+
     private static Logger logger = LoggerFactory.getLogger(IRpcListenerLoader.class);
 
     private static List<IRpcListener> iRpcListeners = new ArrayList<>();
@@ -59,6 +61,8 @@ public class IRpcListenerLoader {
             return;
         }
 
+        LOGGER.info("[IRpcListenerLoader#sendEvent] {}...",iRpcEvent.getClass().getName());
+
         for (final IRpcListener iRpcListener : iRpcListeners) {
             //判断Class的泛型
             Class<?> type = getInterfaceT(iRpcListener);
@@ -76,9 +80,12 @@ public class IRpcListenerLoader {
     }
 
     public static void sendSyncEvent(final IRpcEvent iRpcEvent) {
+        LOGGER.info("[IRpcListenerLoader#sendEvent] {}...",iRpcEvent.getClass().getName());
         if (CollectionUtil.isEmpty(iRpcListeners)) {
             return;
         }
+
+        LOGGER.info("11111");
 
         for (final IRpcListener iRpcListener : iRpcListeners) {
             //判断Class的泛型

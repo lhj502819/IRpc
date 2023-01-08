@@ -1,5 +1,6 @@
 package cn.onenine.irpc.framework.springboot.starter.config;
 
+import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
 import cn.onenine.irpc.framework.springboot.starter.common.IRpcService;
 import cn.onenine.irpc.framework.core.server.ApplicationShutdownHook;
 import cn.onenine.irpc.framework.core.server.Server;
@@ -38,6 +39,8 @@ public class IRpcServerAutoConfiguration implements InitializingBean, Applicatio
         long start = System.currentTimeMillis();
         server = new Server();
         server.initServerConfig();
+        IRpcListenerLoader iRpcListenerLoader = new IRpcListenerLoader();
+        iRpcListenerLoader.init();
         for (String beanName : beansWithAnnotation.keySet()) {
             Object beanObject = beansWithAnnotation.get(beanName);
             IRpcService iRpcService = beanObject.getClass().getAnnotation(IRpcService.class);

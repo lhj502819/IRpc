@@ -4,6 +4,7 @@ import cn.onenine.irpc.framework.core.common.RpcInvocation;
 import cn.onenine.irpc.framework.core.common.RpcProtocol;
 import cn.onenine.irpc.framework.core.common.cache.CommonServerCache;
 import cn.onenine.irpc.framework.core.common.exception.IRpcException;
+import cn.onenine.irpc.framework.core.server.NamedThreadFactory;
 import io.netty.util.ReferenceCountUtil;
 
 import java.lang.reflect.InvocationTargetException;
@@ -28,9 +29,12 @@ public class ServerChannelDispatcher {
 
     public void init(int queueSize, int bizThreadNums) {
         RPC_DATA_QUEUE = new ArrayBlockingQueue<>(queueSize);
-        executorService = new ThreadPoolExecutor(bizThreadNums, bizThreadNums,
-                0L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(512));
+//        executorService = new ThreadPoolExecutor(bizThreadNums, bizThreadNums,
+//                0L, TimeUnit.MILLISECONDS,
+//                new ArrayBlockingQueue<>(512),new NamedThreadFactory("irpc",true));
+        executorService =  new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, Integer.MAX_VALUE,
+                60L, TimeUnit.MILLISECONDS,
+                new SynchronousQueue<>(),  new NamedThreadFactory("irpc", true));
     }
 
     public void add(ServerChannelReadData serverChannelReadData) {
