@@ -7,6 +7,7 @@ import cn.onenine.irpc.framework.core.common.cache.CommonClientCache;
 import cn.onenine.irpc.framework.core.common.config.PropertiesBootstrap;
 import cn.onenine.irpc.framework.core.common.event.IRpcListenerLoader;
 import cn.onenine.irpc.framework.core.common.utils.CommonUtils;
+import cn.onenine.irpc.framework.core.config.ClientConfig;
 import cn.onenine.irpc.framework.core.filter.client.*;
 import cn.onenine.irpc.framework.core.proxy.jdk.JDKProxyFactory;
 import cn.onenine.irpc.framework.core.common.RpcDecoder;
@@ -60,13 +61,17 @@ public class Client {
     public Bootstrap getBootstrap() {
         return bootstrap;
     }
+    public RpcReference initClientApplication() throws Exception {
+        return initClientApplication(PropertiesBootstrap.loadClientConfigFromLocal());
+    }
+
 
 
     /**
      * 客户端需要通过一个代理工厂获取被调用对象的代理对象，然后通过代理对象将数据放入发送队列
      * 最后有一个异步线程将发送队列内部的数据一个个地发送到服务端，并且等待服务端响应对应的数据结果
      */
-    public RpcReference initClientApplication() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public RpcReference initClientApplication(ClientConfig clientConfig) throws Exception {
         EventLoopGroup clientGroup = new NioEventLoopGroup();
         bootstrap.group(clientGroup);
         bootstrap.channel(NioSocketChannel.class);
@@ -83,8 +88,7 @@ public class Client {
         });
         iRpcListenerLoader = new IRpcListenerLoader();
         iRpcListenerLoader.init();
-
-        CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
+        CLIENT_CONFIG = clientConfig;
         this.initConfig();
         RpcReference rpcReference = null;
         if ("javassist".equals(CLIENT_CONFIG.getProxyType())) {
@@ -158,18 +162,21 @@ public class Client {
         @Override
         public void run() {
             while (true) {
+                RpcInvocation rpcInvocation = null;
                 try {
+                    rpcInvocation = CommonClientCache.SEND_QUEUE.take();
                     //阻塞模式
-                    RpcInvocation data = CommonClientCache.SEND_QUEUE.take();
-                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(data);
+                    ChannelFuture channelFuture = ConnectionHandler.getChannelFuture(rpcInvocation);
                     //判断channel是否已经中断
                     if (channelFuture.channel().isOpen()) {
                         //将RpcInvocation封装到RpcProtocol对象中，然后发送给服务端，这里正好对应了ServerHandler
-                        RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(data));
+                        RpcProtocol rpcProtocol = new RpcProtocol(CLIENT_SERIALIZE_FACTORY.serialize(rpcInvocation));
                         channelFuture.channel().writeAndFlush(rpcProtocol);
                     }
                 } catch (Exception e) {
                     LOGGER.error("client call error", e);
+                    rpcInvocation.setE(e);
+                    RESP_MAP.put(rpcInvocation.getUuid(),rpcInvocation);
                 }
             }
         }

@@ -11,11 +11,41 @@
 
     <artifactId>irpc-framework-consumer</artifactId>
 
+    <properties>
+        <spring-boot-version>2.7.0</spring-boot-version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>cn.onenine</groupId>
             <artifactId>irpc-framework-core</artifactId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.onenine</groupId>
+            <artifactId>irpc-framework-spring-start</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring-boot-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>log4j-to-slf4j</artifactId>
+                    <groupId>org.apache.logging.log4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>

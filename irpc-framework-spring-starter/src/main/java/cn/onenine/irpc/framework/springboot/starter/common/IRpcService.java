@@ -1,4 +1,4 @@
-package cn.onenine.irpc.framework.common;
+package cn.onenine.irpc.framework.springboot.starter.common;
 
 import org.springframework.stereotype.Component;
 

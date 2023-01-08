@@ -1,6 +1,7 @@
 package cn.onenine.irpc.framework.provider;
 
 import cn.onenine.irpc.framework.interfaces.DataService;
+import cn.onenine.irpc.framework.springboot.starter.common.IRpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,7 @@ import java.util.List;
  * @email lhj502819@163.com
  * @since 2022/12/17 14:14
  */
+@IRpcService(group = "dev",limit = 10,serviceToken = "token-b")
 public class DataServiceImpl implements DataService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataServiceImpl.class);

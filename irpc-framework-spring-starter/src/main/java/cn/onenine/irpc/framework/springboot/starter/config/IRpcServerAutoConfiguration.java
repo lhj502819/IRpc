@@ -1,6 +1,6 @@
-package cn.onenine.irpc.framework.config;
+package cn.onenine.irpc.framework.springboot.starter.config;
 
-import cn.onenine.irpc.framework.common.IRpcService;
+import cn.onenine.irpc.framework.springboot.starter.common.IRpcService;
 import cn.onenine.irpc.framework.core.server.ApplicationShutdownHook;
 import cn.onenine.irpc.framework.core.server.Server;
 import cn.onenine.irpc.framework.core.server.ServiceWrapper;
