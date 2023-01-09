@@ -30,6 +30,7 @@ public class ConsumerDemo {
         dataServiceRpcReferenceWrapper.setGroup("test");
         dataServiceRpcReferenceWrapper.setToken("token-a");
         dataServiceRpcReferenceWrapper.setAsync(false);
+        dataServiceRpcReferenceWrapper.setRetry(3);
         dataServiceRpcReferenceWrapper.setTimeOut(CLIENT_CONFIG.getCallTimeout());
 
         DataService dataService = rpcReference.get(dataServiceRpcReferenceWrapper);
