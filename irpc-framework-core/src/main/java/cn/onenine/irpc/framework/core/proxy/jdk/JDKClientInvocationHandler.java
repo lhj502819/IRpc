@@ -53,11 +53,11 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         rpcInvocation.setUuid(UUID.randomUUID().toString());
         rpcInvocation.setAttachments(rpcReferenceWrapper.getAttatchments());
         rpcInvocation.setRetry(rpcReferenceWrapper.getRetry());
+        RESP_MAP.put(rpcInvocation.getUuid(), OBJECT);
         SEND_QUEUE.add(rpcInvocation);
         if (rpcReferenceWrapper.isAsync()) {
             return null;
         }
-        RESP_MAP.put(rpcInvocation.getUuid(), OBJECT);
         LOGGER.info("add request to RESP_MAP uuid:{} timeStamp:{}",rpcInvocation.getUuid(),System.currentTimeMillis());
         long beginTime = System.currentTimeMillis();
         long nowTimeMillis = System.currentTimeMillis();
