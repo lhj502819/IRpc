@@ -34,15 +34,9 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
         //通过之前发送的uuid来注入匹配的响应数值
         if (!RESP_MAP.containsKey(rpcInvocation.getUuid())){
-            LOGGER.info("[ClientHandler#channelRead] request not found method:{} uuid: {} timeStamp:{}" ,rpcInvocation.getTargetMethod(), rpcInvocation.getUuid(),System.currentTimeMillis());
-            LOGGER.info("[ClientHandler#channelRead]RESP_MAP all keys:{} timeStamp:{}",JSONObject.toJSONString(RESP_MAP.keySet()),System.currentTimeMillis());
-//            throw new IllegalArgumentException("server response is error");
-            Thread.sleep(500);
-            if (!RESP_MAP.containsKey(rpcInvocation.getUuid())){
-                LOGGER.info("sleep 500 millions after uuid also not found {}",rpcInvocation.getUuid());
-            }else {
-                LOGGER.info("sleep 500 millions after uuid  founded {}",rpcInvocation.getUuid());
-            }
+            LOGGER.error("[ClientHandler#channelRead] request not found method:{} uuid: {} timeStamp:{}" ,rpcInvocation.getTargetMethod(), rpcInvocation.getUuid(),System.currentTimeMillis());
+            LOGGER.error("[ClientHandler#channelRead]RESP_MAP all keys:{} timeStamp:{}",JSONObject.toJSONString(RESP_MAP.keySet()),System.currentTimeMillis());
+            throw new IllegalArgumentException("server response is error");
         }
 
         //将请求的响应结构放入一个Map集合中，集合的key就是uuid，这个uuid在发送请求之前就已经初始化好了

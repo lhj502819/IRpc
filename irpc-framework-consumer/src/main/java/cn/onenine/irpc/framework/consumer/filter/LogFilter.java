@@ -16,6 +16,6 @@ import java.util.List;
 public class LogFilter implements IClientFilter {
     @Override
     public void doFilter(List<ChannelFutureWrapper> src, RpcInvocation rpcInvocation) {
-        System.out.println("自定义日志过滤器");
+//        System.out.println("自定义日志过滤器");
     }
 }

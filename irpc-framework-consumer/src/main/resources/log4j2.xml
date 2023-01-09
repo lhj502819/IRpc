@@ -96,7 +96,7 @@
             <AppenderRef ref="Console"/>
         </logger>
 
-        <logger name="cn.onenine.irpc" level="INFO" additivity="false">
+        <logger name="cn.onenine.irpc" level="ERROR" additivity="false">
             <AppenderRef ref="clientLog"/>
         </logger>
 

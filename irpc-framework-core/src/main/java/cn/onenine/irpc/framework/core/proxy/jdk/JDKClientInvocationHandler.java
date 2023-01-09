@@ -58,7 +58,6 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         if (rpcReferenceWrapper.isAsync()) {
             return null;
         }
-        LOGGER.info("add request to RESP_MAP uuid:{} timeStamp:{}",rpcInvocation.getUuid(),System.currentTimeMillis());
         long beginTime = System.currentTimeMillis();
         long nowTimeMillis = System.currentTimeMillis();
 

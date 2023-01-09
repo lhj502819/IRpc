@@ -175,8 +175,8 @@ public class Client {
                     }
                 } catch (Exception e) {
                     LOGGER.error("client call error", e);
-//                    rpcInvocation.setE(e);
-//                    RESP_MAP.put(rpcInvocation.getUuid(),rpcInvocation);
+                    rpcInvocation.setE(e);
+                    RESP_MAP.put(rpcInvocation.getUuid(),rpcInvocation);
                 }
             }
         }
