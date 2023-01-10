@@ -28,7 +28,6 @@ public class UserController {
 
     @GetMapping("/query")
     public String query() {
-        System.out.println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
         try {
             return dataService.sendData("get user info");
         }catch (Exception e){

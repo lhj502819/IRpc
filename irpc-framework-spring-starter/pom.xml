@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>irpc-framework-spring-start</artifactId>
+    <artifactId>irpc-framework-spring-starter</artifactId>
 
     <properties>
         <irpc-framework-core.version>1.0-SNAPSHOT</irpc-framework-core.version>
