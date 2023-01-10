@@ -1,4 +1,4 @@
-# IRpc 手写RPC框架第7版-基于线程和队列提升框架并发处理能力
+# IRpc 手写RPC框架v7-基于线程和队列提升框架并发处理能力
 <a name="yl3QV"></a>
 ## Server端
 <a name="PrlhT"></a>
